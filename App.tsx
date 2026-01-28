@@ -10,42 +10,51 @@ import { AboutUs, Contact, PrivacyPolicy, TermsOfService } from './pages/StaticP
 import { storage } from './db/storage';
 import { JobWithCompany, Company, Job } from './types';
 
-const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<string>('home');
+interface AppProps {
+  ssrPath?: string;
+}
+
+const parsePath = (path: string): string => {
+  // Normalize path by removing leading/trailing slashes
+  const cleanPath = path.replace(/^\/+|\/+$/g, '');
+  
+  if (!cleanPath || cleanPath === '') return 'home';
+  if (cleanPath === 'admin') return 'admin';
+  
+  if (cleanPath.startsWith('jobs/')) {
+    const parts = cleanPath.split('/');
+    // parts[0] is 'jobs', parts[1] is category, parts[2] is id
+    if (parts.length === 3) return `job:${parts[2]}`;
+    return `category:${parts[1]}`;
+  }
+  
+  if (cleanPath === 'about-us') return 'page:about';
+  if (cleanPath === 'contact') return 'page:contact';
+  if (cleanPath === 'privacy') return 'page:privacy';
+  if (cleanPath === 'terms') return 'page:terms';
+  
+  return 'home';
+};
+
+const App: React.FC<AppProps> = ({ ssrPath }) => {
+  const [currentPage, setCurrentPage] = useState<string>(() => {
+    if (ssrPath) return parsePath(ssrPath);
+    if (typeof window !== 'undefined') return parsePath(window.location.pathname);
+    return 'home';
+  });
+  
   const [jobsWithCompany, setJobsWithCompany] = useState<JobWithCompany[]>([]);
   const [allCompanies, setAllCompanies] = useState<Company[]>([]);
   const [allRawJobs, setAllRawJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const parseHash = () => {
-      const hash = window.location.hash.replace('#/', '');
-      if (!hash) return 'home';
-      
-      if (hash === 'admin') return 'admin';
-      
-      if (hash.startsWith('jobs/')) {
-        const parts = hash.split('/');
-        if (parts.length === 3) return `job:${parts[2]}`;
-        return `category:${parts[1]}`;
-      }
-      
-      if (hash.startsWith('page:')) return hash;
-      if (hash === 'about-us') return 'page:about';
-      if (hash === 'contact') return 'page:contact';
-      if (hash === 'privacy') return 'page:privacy';
-      if (hash === 'terms') return 'page:terms';
-      
-      return 'home';
+    const handlePopState = () => {
+      setCurrentPage(parsePath(window.location.pathname));
     };
 
-    const handleHashChange = () => {
-      setCurrentPage(parseHash());
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
-    setCurrentPage(parseHash());
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   const refreshData = async () => {
@@ -70,38 +79,34 @@ const App: React.FC = () => {
     refreshData();
   }, []);
 
-  const updateHashSafely = (newHash: string) => {
-    try {
-      if (window.history && window.history.pushState) {
-        window.history.pushState(null, '', newHash);
-      } else {
-        window.location.hash = newHash;
-      }
-    } catch (error) {
-      console.warn('Navigation restricted.', error);
-    }
-  };
-
   const navigate = (page: string) => {
     setCurrentPage(page);
-    if (page === 'home') updateHashSafely('#/');
-    else if (page === 'admin') updateHashSafely('#/admin');
-    else if (page.startsWith('category:')) updateHashSafely(`#/jobs/${page.split(':')[1]}`);
+    let newPath = '/';
+    
+    if (page === 'home') newPath = '/';
+    else if (page === 'admin') newPath = '/admin';
+    else if (page.startsWith('category:')) {
+      const cat = page.split(':')[1];
+      newPath = `/jobs/${cat}`;
+    }
     else if (page.startsWith('job:')) {
       const id = page.split(':')[1];
       const job = jobsWithCompany.find(j => j.id === id);
-      updateHashSafely(job ? `#/jobs/${job.category || 'all'}/${id}` : `#/jobs/all/${id}`);
+      newPath = `/jobs/${job?.category || 'all'}/${id}`;
     } 
-    else if (page === 'page:about') updateHashSafely('#/about-us');
-    else if (page === 'page:contact') updateHashSafely('#/contact');
-    else if (page === 'page:privacy') updateHashSafely('#/privacy');
-    else if (page === 'page:terms') updateHashSafely('#/terms');
+    else if (page === 'page:about') newPath = '/about-us';
+    else if (page === 'page:contact') newPath = '/contact';
+    else if (page === 'page:privacy') newPath = '/privacy';
+    else if (page === 'page:terms') newPath = '/terms';
 
-    window.scrollTo(0, 0);
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', newPath);
+      window.scrollTo(0, 0);
+    }
   };
 
   const renderPage = () => {
-    if (loading) return (
+    if (loading && jobsWithCompany.length === 0) return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
       </div>
@@ -109,12 +114,19 @@ const App: React.FC = () => {
 
     if (currentPage === 'home') return <Home onNavigate={navigate} featuredJobs={jobsWithCompany.slice(0, 5)} />;
     if (currentPage === 'admin') return <AdminDashboard companies={allCompanies} jobs={allRawJobs} onRefresh={refreshData} />;
-    if (currentPage.startsWith('category:')) return <CategoryPage categoryKey={currentPage.split(':')[1]} onNavigate={navigate} allJobs={jobsWithCompany} />;
+    
+    if (currentPage.startsWith('category:')) {
+      const catKey = currentPage.split(':')[1];
+      return <CategoryPage categoryKey={catKey} onNavigate={navigate} allJobs={jobsWithCompany} />;
+    }
+    
     if (currentPage.startsWith('job:')) {
-      const job = jobsWithCompany.find(j => j.id === currentPage.split(':')[1]);
+      const jobId = currentPage.split(':')[1];
+      const job = jobsWithCompany.find(j => j.id === jobId);
       if (job) return <JobDetailPage job={job} onNavigate={navigate} />;
       return <div className="p-20 text-center">Job not found. <button onClick={() => navigate('home')} className="text-indigo-600 font-bold">Back Home</button></div>;
     }
+    
     if (currentPage === 'page:about') return <AboutUs />;
     if (currentPage === 'page:contact') return <Contact />;
     if (currentPage === 'page:privacy') return <PrivacyPolicy />;

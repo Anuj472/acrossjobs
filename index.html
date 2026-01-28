@@ -5,7 +5,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AcrossJob - Smart Job Search with Network-First Approach</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Added typography and forms plugins -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography,forms"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
       body {
@@ -16,6 +17,105 @@
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+      }
+      
+      /* --- PRETTY PRINT ENGINE FOR RICH CONTENT --- */
+      .rich-content {
+        color: #334155 !important; /* slate-700 */
+        font-size: 1.05rem !important;
+        line-height: 1.75 !important;
+        word-break: break-word;
+      }
+
+      /* Force override any weird inline positioning/styling from source */
+      .rich-content * {
+        text-align: left !important;
+        font-family: 'Inter', sans-serif !important;
+        max-width: 100%;
+      }
+
+      .rich-content p {
+        margin-bottom: 1.5rem !important;
+        display: block !important;
+      }
+
+      /* Clean up lists */
+      .rich-content ul, .rich-content ol {
+        margin: 1.5rem 0 1.5rem 1.5rem !important;
+        padding: 0 !important;
+      }
+      
+      .rich-content ul { list-style-type: disc !important; }
+      .rich-content ol { list-style-type: decimal !important; }
+
+      .rich-content li {
+        margin-bottom: 0.75rem !important;
+        padding-left: 0.5rem !important;
+        display: list-item !important;
+      }
+
+      /* Heading Polish */
+      .rich-content h1, .rich-content h2, .rich-content h3, .rich-content h4 {
+        color: #0f172a !important; /* slate-900 */
+        font-weight: 700 !important;
+        margin-top: 2.5rem !important;
+        margin-bottom: 1.25rem !important;
+        line-height: 1.3 !important;
+        letter-spacing: -0.01em !important;
+      }
+
+      .rich-content h1 { font-size: 1.875rem !important; }
+      .rich-content h2 { font-size: 1.5rem !important; }
+      .rich-content h3 { font-size: 1.25rem !important; }
+
+      .rich-content strong, .rich-content b {
+        color: #1e293b !important; /* slate-800 */
+        font-weight: 700 !important;
+      }
+
+      /* Style ALL links, even those with weird platform classes */
+      .rich-content a, 
+      .rich-content [class*="fui-Link"],
+      .rich-content [class*="Link"] {
+        color: #4f46e5 !important; /* indigo-600 */
+        text-decoration: none !important;
+        font-weight: 600 !important;
+        border-bottom: 2px solid rgba(79, 70, 229, 0.1) !important;
+        padding-bottom: 1px;
+        transition: all 0.2s ease-in-out;
+      }
+
+      .rich-content a:hover,
+      .rich-content [class*="fui-Link"]:hover {
+        color: #4338ca !important; /* indigo-700 */
+        border-bottom-color: #4f46e5 !important;
+        background-color: rgba(79, 70, 229, 0.05) !important;
+      }
+
+      /* Recruitment Platform Containers (Greenhouse/Lever/InMobi) */
+      .content-intro, 
+      .content-conclusion,
+      .rich-content .content-intro,
+      .rich-content .content-conclusion {
+        background-color: #f8fafc; /* slate-50 */
+        padding: 2rem !important;
+        border-radius: 1rem !important;
+        margin-bottom: 2.5rem !important;
+        border: 1px solid #f1f5f9 !important;
+      }
+
+      .content-conclusion {
+        margin-top: 3rem !important;
+        border-top: 4px solid #e2e8f0 !important;
+      }
+
+      /* Remove empty tags that mess up layout */
+      .rich-content br + br {
+        display: none;
+      }
+      
+      .rich-content p:empty {
+        display: none !important;
       }
     </style>
   <script type="importmap">
@@ -30,7 +130,7 @@
 }
 </script>
 </head>
-  <body class="bg-slate-50 text-slate-900">
+  <body class="bg-slate-50 text-slate-900" suppressHydrationWarning>
     <div id="root"></div>
   </body>
 </html>

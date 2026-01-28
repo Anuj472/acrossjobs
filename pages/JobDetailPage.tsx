@@ -13,16 +13,15 @@ interface JobDetailPageProps {
 const JobDetailPage: React.FC<JobDetailPageProps> = ({ job, onNavigate }) => {
   const [imgError, setImgError] = useState(false);
 
-  // Fix for "it" -> "IT" display in breadcrumbs
   const categoryLabel = (cat: string) => {
     if (cat === 'it') return 'IT';
     return cat.replace('-', ' ');
   };
 
   const companyDesc = job.company.description || "A forward-thinking organization.";
-  const aboutText = `${companyDesc} As a prominent leader in the technology sector, this organization prides itself on a culture of excellence, diversity, and rapid innovation. We believe in empowering our employees to take ownership of their career paths while contributing to global solutions that matter. By joining the team at ${job.company.name}, you are stepping into a workspace that values collaboration, integrity, and the pursuit of cutting-edge technology. Our offices are designed to foster creativity, and our benefits reflect our commitment to long-term employee well-being and growth.`;
+  const aboutText = `${companyDesc} At ${job.company.name}, we are building the future. We value innovation, collaboration, and a commitment to excellence. Joining our team means being part of a culture that empowers every individual to make an impact and grow their career in a supportive, high-energy environment.`;
   
-  const truncatedAbout = aboutText.split(' ').slice(0, 90).join(' ') + '...';
+  const truncatedAbout = aboutText.split(' ').slice(0, 80).join(' ') + '...';
 
   useEffect(() => {
     const jsonLd = {
@@ -62,7 +61,7 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ job, onNavigate }) => {
   const renderLogo = (className: string) => {
     if (!job.company.logo_url || imgError) {
       return (
-        <div className={`${className} bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-3xl border border-indigo-200`}>
+        <div className={`${className} bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-3xl border border-indigo-200 uppercase`}>
           {job.company.name.charAt(0)}
         </div>
       );
@@ -78,7 +77,7 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ job, onNavigate }) => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
+    <div className="max-w-6xl mx-auto px-4 py-12">
       <nav className="mb-8 flex text-sm text-slate-500 gap-2 items-center">
         <button onClick={() => onNavigate('home')} className="hover:text-indigo-600 transition-colors">Home</button>
         <span className="text-slate-300">/</span>
@@ -89,108 +88,124 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ job, onNavigate }) => {
         <span className="text-slate-900 font-medium truncate max-w-[200px] md:max-w-none">{job.title}</span>
       </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-3xl border border-slate-200 p-8 mb-8 shadow-sm">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="lg:col-span-8">
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-12 mb-8 shadow-sm">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
               <div className="flex items-center gap-6">
-                {renderLogo("w-20 h-20 rounded-2xl")}
+                {renderLogo("w-24 h-24 rounded-2xl shadow-sm")}
                 <div>
-                  <h1 className="text-3xl font-extrabold text-slate-900 mb-1 leading-tight">{job.title}</h1>
-                  <div className="flex items-center gap-3 text-slate-600">
-                    <span className="font-semibold text-indigo-600">{job.company.name}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">{ICONS.mapPin} {job.location_city}, {job.location_country}</span>
+                  <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2 tracking-tight leading-tight">{job.title}</h1>
+                  <div className="flex flex-wrap items-center gap-3 text-slate-600">
+                    <span className="font-bold text-indigo-600 text-lg">{job.company.name}</span>
+                    <span className="hidden md:inline text-slate-300">•</span>
+                    <span className="flex items-center gap-1.5 font-medium">{ICONS.mapPin} {job.location_city}, {job.location_country}</span>
                   </div>
                 </div>
               </div>
-              <a href={job.apply_link} target="_blank" rel="nofollow noopener" className="w-full md:w-auto px-8 py-4 bg-indigo-600 text-white text-center font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
+              <a href={job.apply_link} target="_blank" rel="nofollow noopener" className="w-full md:w-auto px-10 py-5 bg-indigo-600 text-white text-center font-bold text-lg rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 hover:-translate-y-0.5">
                 Apply Now
               </a>
             </div>
 
-            <div className="flex flex-wrap gap-4 py-6 border-y border-slate-100 mb-8">
-              <div className="bg-slate-50 px-4 py-2 rounded-lg">
-                <span className="block text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Salary</span>
-                <span className="font-semibold text-slate-900">{formatSalary(job.salary_range)}</span>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 py-8 border-y border-slate-100 mb-12">
+              <div>
+                <span className="block text-xs text-slate-400 uppercase font-bold tracking-widest mb-1.5">Salary</span>
+                <span className="font-bold text-slate-900 text-lg">{formatSalary(job.salary_range)}</span>
               </div>
-              <div className="bg-slate-50 px-4 py-2 rounded-lg">
-                <span className="block text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Type</span>
-                <span className="font-semibold text-slate-900 capitalize">{job.job_type}</span>
+              <div>
+                <span className="block text-xs text-slate-400 uppercase font-bold tracking-widest mb-1.5">Work Type</span>
+                <span className="font-bold text-slate-900 text-lg capitalize">{job.job_type}</span>
               </div>
-              <div className="bg-slate-50 px-4 py-2 rounded-lg">
-                <span className="block text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Location</span>
-                <span className="font-semibold text-slate-900">{job.location_city}</span>
+              <div className="hidden md:block">
+                <span className="block text-xs text-slate-400 uppercase font-bold tracking-widest mb-1.5">Location</span>
+                <span className="font-bold text-slate-900 text-lg">{job.location_city}</span>
               </div>
             </div>
 
-            <article className="prose prose-slate max-w-none prose-headings:text-slate-900 prose-p:text-slate-600 prose-li:text-slate-600">
+            <div className="space-y-12">
               {job.description && (
-                <div className="mb-10">
-                  <h2 className="text-xl font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">Job Description</h2>
+                <section>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+                    <span className="w-1.5 h-8 bg-indigo-600 rounded-full"></span>
+                    Job Description
+                  </h2>
                   <div 
                     className="rich-content"
                     dangerouslySetInnerHTML={{ __html: job.description }} 
                   />
-                </div>
+                </section>
               )}
               
               {job.responsibilities && (
-                <div className="mb-10">
-                  <h2 className="text-xl font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">Responsibilities</h2>
+                <section>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+                    <span className="w-1.5 h-8 bg-indigo-600 rounded-full"></span>
+                    Key Responsibilities
+                  </h2>
                   <div 
                     className="rich-content"
                     dangerouslySetInnerHTML={{ __html: job.responsibilities }} 
                   />
-                </div>
+                </section>
               )}
 
               {job.requirements && (
-                <div className="mb-10">
-                  <h2 className="text-xl font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">Requirements</h2>
+                <section>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+                    <span className="w-1.5 h-8 bg-indigo-600 rounded-full"></span>
+                    What We're Looking For
+                  </h2>
                   <div 
                     className="rich-content"
                     dangerouslySetInnerHTML={{ __html: job.requirements }} 
                   />
-                </div>
+                </section>
               )}
               
               {job.benefits && (
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900 mb-4 pb-2 border-b border-slate-100">Benefits</h2>
+                <section>
+                  <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+                    <span className="w-1.5 h-8 bg-indigo-600 rounded-full"></span>
+                    Benefits & Perks
+                  </h2>
                   <div 
                     className="rich-content"
                     dangerouslySetInnerHTML={{ __html: job.benefits }} 
                   />
-                </div>
+                </section>
               )}
-            </article>
+            </div>
           </div>
         </div>
 
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-4">
           <div className="sticky top-24 space-y-6">
             <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Networking Advantage</h3>
-              <p className="text-sm text-slate-600 mb-6 leading-relaxed">Connect with people already working at {job.company.name}. Referrals are 10x more likely to lead to a hire.</p>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">Referral Search</h3>
+              <p className="text-slate-600 mb-8 leading-relaxed">
+                Referrals increase your chances of getting hired by 10x. Use our tool to find the right people to talk to.
+              </p>
               <LinkedInReferralButton jobTitle={job.title} companyName={job.company.name} />
             </div>
 
             <div className="bg-slate-900 rounded-3xl p-8 text-white">
-              <h3 className="text-lg font-bold mb-4">About {job.company.name}</h3>
-              <div className="flex items-center gap-4 mb-4">
-                {renderLogo("w-12 h-12 rounded-xl")}
-                <span className="font-bold text-indigo-400">{job.company.name}</span>
+              <div className="flex items-center gap-5 mb-8">
+                {renderLogo("w-16 h-16 rounded-xl")}
+                <div>
+                  <h3 className="text-xl font-bold leading-tight">About {job.company.name}</h3>
+                  <a href={job.company.website_url || '#'} target="_blank" rel="noopener" className="text-indigo-400 text-sm hover:underline flex items-center gap-1 mt-1">
+                    Visit Website {ICONS.globe}
+                  </a>
+                </div>
               </div>
-              <p className="text-sm text-slate-300 leading-relaxed mb-6 italic">
+              <p className="text-slate-400 leading-relaxed mb-8 italic">
                 {truncatedAbout}
               </p>
-              <div className="flex flex-col gap-3">
-                <a href={job.company.website_url || '#'} target="_blank" className="inline-flex items-center gap-2 text-indigo-400 hover:text-indigo-300 text-sm font-bold">
-                  Learn more about company {ICONS.globe}
-                </a>
-                <a href={job.apply_link} target="_blank" className="inline-flex items-center gap-2 text-indigo-400 hover:text-indigo-300 text-sm font-bold">
-                  View on Careers Page {ICONS.chevronRight}
+              <div className="pt-6 border-t border-slate-800">
+                <a href={job.apply_link} target="_blank" rel="noopener" className="flex items-center justify-between w-full group text-indigo-400 font-bold">
+                  View Careers Page 
+                  <span className="group-hover:translate-x-1 transition-transform">{ICONS.chevronRight}</span>
                 </a>
               </div>
             </div>

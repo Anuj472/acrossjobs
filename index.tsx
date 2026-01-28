@@ -8,9 +8,25 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
-const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+/**
+ * Check if the root element has children.
+ * If it does, we assume SSR was successful and we should hydrate.
+ * Otherwise, we fall back to standard createRoot rendering.
+ */
+const hasSSRContent = rootElement.hasChildNodes();
+
+if (hasSSRContent) {
+  ReactDOM.hydrateRoot(
+    rootElement,
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+} else {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}

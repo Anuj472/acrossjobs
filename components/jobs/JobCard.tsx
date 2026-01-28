@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { JobWithCompany } from '../../types';
 import { ICONS } from '../../constants';
-import { formatSalary, formatRelativeDate } from '../../lib/utils/format';
+import { formatSalary, formatRelativeDate, formatAbsoluteDate } from '../../lib/utils/format';
 
 interface JobCardProps {
   job: JobWithCompany;
@@ -13,11 +13,17 @@ interface JobCardProps {
 const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) => {
   const isGrid = variant === 'grid';
   const [imgError, setImgError] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted to true after first render to safely show relative dates
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const renderLogo = () => {
     if (!job.company.logo_url || imgError) {
       return (
-        <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xl border border-indigo-200">
+        <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xl border border-indigo-200 uppercase">
           {job.company.name.charAt(0)}
         </div>
       );
@@ -48,7 +54,12 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
           <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-wider">
             {job.job_type}
           </span>
-          <span className="text-xs text-slate-500">{formatRelativeDate(job.created_at)}</span>
+          <span 
+            className="text-xs text-slate-500" 
+            suppressHydrationWarning
+          >
+            {mounted ? formatRelativeDate(job.created_at) : formatAbsoluteDate(job.created_at)}
+          </span>
         </div>
         <h3 className="text-lg font-bold text-slate-900 truncate mb-1">
           {job.title}
