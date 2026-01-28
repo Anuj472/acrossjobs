@@ -2,9 +2,9 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "lib": ["ESNext", "DOM"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "strict": true,
     "skipLibCheck": true,
@@ -14,8 +14,18 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "*": ["*", "*.tsx", "*.ts"]
-    }
+      "@/*": ["./*"]
+    },
+    "types": ["@cloudflare/workers-types", "@types/react", "@types/react-dom"]
   },
-  "include": ["functions/**/*", "pages/**/*", "components/**/*", "lib/**/*", "types.ts", "App.tsx", "index.tsx", "constants.tsx"]
+  "include": [
+    "functions/**/*",
+    "pages/**/*",
+    "components/**/*",
+    "lib/**/*",
+    "types.ts",
+    "App.tsx",
+    "index.tsx",
+    "constants.tsx"
+  ]
 }

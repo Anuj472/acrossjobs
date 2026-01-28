@@ -3,16 +3,34 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import App from '../App';
 
+interface Env {
+  ASSETS: {
+    fetch: typeof fetch;
+  };
+}
+
+// Added PagesFunction type definition to fix 'Cannot find name' error
+type PagesFunction<Env = any> = (context: {
+  request: Request;
+  env: Env;
+  params: Record<string, string | string[]>;
+  waitUntil: (promise: Promise<any>) => void;
+  next: (input?: Request | string, init?: RequestInit) => Promise<Response>;
+  data: Record<string, unknown>;
+}) => Response | Promise<Response>;
+
 /**
  * Cloudflare Pages Function entry point.
  * This handles SSR for any non-static-file request.
  */
-export async function onRequest(context: { request: Request; env: { ASSETS: { fetch: typeof fetch } } }) {
+export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
   const url = new URL(request.url);
 
   // Allow static assets (images, js, css) to be served normally
-  if (url.pathname.includes('.') || url.pathname.startsWith('/api/')) {
+  // We check for common extensions to skip SSR for them
+  const isStaticAsset = /\.(js|css|png|jpg|jpeg|gif|svg|ico|json|txt|map)$/.test(url.pathname);
+  if (isStaticAsset || url.pathname.startsWith('/api/')) {
     return env.ASSETS.fetch(request);
   }
 
@@ -22,7 +40,7 @@ export async function onRequest(context: { request: Request; env: { ASSETS: { fe
     return response;
   }
   
-  let html = await response.text();
+  const html = await response.text();
 
   try {
     // 2. Render the React App to string
@@ -34,6 +52,7 @@ export async function onRequest(context: { request: Request; env: { ASSETS: { fe
     );
 
     // 3. Inject the rendered HTML into the template's root div
+    // We use a simple replace. Ensure index.html has <div id="root"></div> exactly.
     const ssrHtml = html.replace(
       '<div id="root"></div>',
       `<div id="root">${appHtml}</div>`
@@ -52,4 +71,4 @@ export async function onRequest(context: { request: Request; env: { ASSETS: { fe
       headers: { 'content-type': 'text/html;charset=UTF-8' },
     });
   }
-}
+};
