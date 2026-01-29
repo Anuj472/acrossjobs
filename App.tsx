@@ -39,9 +39,10 @@ const parsePath = (path: string): string => {
 const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   // 1. Initial State from SSR or Window
   const [currentPage, setCurrentPage] = useState<string>(() => {
-    if (ssrPath) return parsePath(ssrPath);
-    if (typeof window !== 'undefined') return parsePath(window.location.pathname);
-    return 'home';
+    const initialPage = ssrPath ? parsePath(ssrPath) : 
+                        (typeof window !== 'undefined' ? parsePath(window.location.pathname) : 'home');
+    console.log('🎬 AcrossJob: Initial page:', initialPage);
+    return initialPage;
   });
   
   const [jobsWithCompany, setJobsWithCompany] = useState<JobWithCompany[]>(() => {
@@ -56,39 +57,68 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     return jobsWithCompany.length === 0;
   });
 
-  // 2. Navigation Logic
+  // 2. Navigation Logic with Enhanced Debugging
   const navigate = useCallback((page: string) => {
-    console.info(`AcrossJob: Navigation Triggered -> ${page}`);
-    setCurrentPage(page);
+    console.group('🔄 AcrossJob Navigation');
+    console.log('From:', currentPage);
+    console.log('To:', page);
     
-    let newPath = '/';
-    if (page === 'home') newPath = '/';
-    else if (page === 'admin') newPath = '/admin';
-    else if (page.startsWith('category:')) {
-      const cat = page.split(':')[1];
-      newPath = `/jobs/${cat}`;
-    }
-    else if (page.startsWith('job:')) {
-      const id = page.split(':')[1];
-      const job = jobsWithCompany.find(j => j.id === id);
-      newPath = `/jobs/${job?.category || 'all'}/${id}`;
-    } 
-    else if (page === 'page:about') newPath = '/about-us';
-    else if (page === 'page:contact') newPath = '/contact';
-    else if (page === 'page:privacy') newPath = '/privacy';
-    else if (page === 'page:terms') newPath = '/terms';
+    try {
+      setCurrentPage(page);
+      console.log('✅ State updated to:', page);
+      
+      let newPath = '/';
+      if (page === 'home') newPath = '/';
+      else if (page === 'admin') newPath = '/admin';
+      else if (page.startsWith('category:')) {
+        const cat = page.split(':')[1];
+        newPath = `/jobs/${cat}`;
+      }
+      else if (page.startsWith('job:')) {
+        const id = page.split(':')[1];
+        const job = jobsWithCompany.find(j => j.id === id);
+        newPath = `/jobs/${job?.category || 'all'}/${id}`;
+      } 
+      else if (page === 'page:about') newPath = '/about-us';
+      else if (page === 'page:contact') newPath = '/contact';
+      else if (page === 'page:privacy') newPath = '/privacy';
+      else if (page === 'page:terms') newPath = '/terms';
 
-    if (typeof window !== 'undefined') {
-      window.history.pushState({ page }, '', newPath);
-      window.scrollTo(0, 0);
+      console.log('📍 New path:', newPath);
+
+      if (typeof window !== 'undefined') {
+        window.history.pushState({ page }, '', newPath);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        console.log('✅ URL updated and scrolled to top');
+      }
+    } catch (error) {
+      console.error('❌ Navigation error:', error);
     }
-  }, [jobsWithCompany]);
+    console.groupEnd();
+  }, [currentPage, jobsWithCompany]);
+
+  // Debug helper
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).ACROSSJOB_DEBUG = {
+        currentPage,
+        jobCount: jobsWithCompany.length,
+        loading,
+        navigate: (page: string) => {
+          console.log('🔧 Manual navigation triggered:', page);
+          navigate(page);
+        }
+      };
+    }
+  }, [currentPage, jobsWithCompany.length, loading, navigate]);
 
   // 3. Sync state with back/forward buttons
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-      console.debug("AcrossJob: Browser Back/Forward navigation detected.");
-      setCurrentPage(parsePath(window.location.pathname));
+      console.log("⬅️ Browser Back/Forward navigation detected");
+      const newPage = parsePath(window.location.pathname);
+      console.log("Setting page to:", newPage);
+      setCurrentPage(newPage);
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -101,11 +131,12 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     }
 
     try {
-      console.debug("AcrossJob: Loading jobs from Supabase...");
+      console.log("📥 Loading jobs from Supabase...");
       const data = await storage.getJobsWithCompanies();
+      console.log(`✅ Loaded ${data.length} jobs`);
       setJobsWithCompany(data);
     } catch (e) {
-      console.error("AcrossJob: Storage fetch failed", e);
+      console.error("❌ Storage fetch failed:", e);
     } finally {
       setLoading(false);
     }
@@ -115,8 +146,15 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     fetchEssentialData();
   }, []);
 
+  // Log page changes
+  useEffect(() => {
+    console.log('📄 Current page changed to:', currentPage);
+  }, [currentPage]);
+
   // 4. Component Router
   const renderPage = () => {
+    console.log('🎨 Rendering page:', currentPage);
+    
     if (loading && jobsWithCompany.length === 0) return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
@@ -140,8 +178,11 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
         <div className="p-20 text-center">
           <p className="text-slate-500 mb-6 font-medium">Job listing not found or has expired.</p>
           <button 
-            onClick={() => navigate('home')} 
-            className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('home');
+            }} 
+            className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg cursor-pointer"
           >
             Return to Homepage
           </button>
