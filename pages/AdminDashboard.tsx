@@ -1,24 +1,46 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ICONS, JOB_CATEGORIES, REMOTE_STATUSES } from '../constants';
 import { Company, Job, JobType, JobCategoryType } from '../types';
 import { storage } from '../db/storage';
 
 interface AdminDashboardProps {
-  companies: Company[];
-  jobs: Job[];
   onRefresh: () => void;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ companies, jobs, onRefresh }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ onRefresh }) => {
   const [activeTab, setActiveTab] = useState<'jobs' | 'companies'>('jobs');
   const [showAddJob, setShowAddJob] = useState(false);
   const [showAddCompany, setShowAddCompany] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+
+  const fetchAdminData = async () => {
+    setLoading(true);
+    try {
+      const [cList, jList] = await Promise.all([
+        storage.getCompanies(),
+        storage.getJobs()
+      ]);
+      setCompanies(cList);
+      setJobs(jList);
+    } catch (err) {
+      console.error("Admin Fetch Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdminData();
+  }, []);
 
   const [newJob, setNewJob] = useState({
     title: '',
-    company_id: companies[0]?.id || '',
+    company_id: '',
     category: 'it' as JobCategoryType,
     location_city: '',
     location_country: 'USA',
@@ -31,6 +53,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ companies, jobs, onRefr
     benefits: '',
     is_active: true
   });
+
+  // Set initial company_id once companies are loaded
+  useEffect(() => {
+    if (companies.length > 0 && !newJob.company_id) {
+      setNewJob(prev => ({ ...prev, company_id: companies[0].id }));
+    }
+  }, [companies]);
 
   const [newCompany, setNewCompany] = useState({
     name: '',
@@ -50,7 +79,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ companies, jobs, onRefr
         updated_at: new Date().toISOString()
       });
       setShowAddJob(false);
-      onRefresh();
+      fetchAdminData();
+      onRefresh(); // Refresh the global state too
     } catch (err) {
       alert("Error adding job. Check console.");
       console.error(err);
@@ -70,6 +100,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ companies, jobs, onRefr
         updated_at: new Date().toISOString()
       });
       setShowAddCompany(false);
+      fetchAdminData();
       onRefresh();
     } catch (err) {
       alert("Error adding company. Check console.");
@@ -78,6 +109,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ companies, jobs, onRefr
       setIsSubmitting(false);
     }
   };
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+      <p className="text-slate-500 font-medium">Loading Management Tools...</p>
+    </div>
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-12">

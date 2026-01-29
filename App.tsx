@@ -15,24 +15,18 @@ interface AppProps {
 }
 
 const parsePath = (path: string): string => {
-  // Normalize path by removing leading/trailing slashes
   const cleanPath = path.replace(/^\/+|\/+$/g, '');
-  
   if (!cleanPath || cleanPath === '') return 'home';
   if (cleanPath === 'admin') return 'admin';
-  
   if (cleanPath.startsWith('jobs/')) {
     const parts = cleanPath.split('/');
-    // parts[0] is 'jobs', parts[1] is category, parts[2] is id
     if (parts.length === 3) return `job:${parts[2]}`;
     return `category:${parts[1]}`;
   }
-  
   if (cleanPath === 'about-us') return 'page:about';
   if (cleanPath === 'contact') return 'page:contact';
   if (cleanPath === 'privacy') return 'page:privacy';
   if (cleanPath === 'terms') return 'page:terms';
-  
   return 'home';
 };
 
@@ -44,45 +38,35 @@ const App: React.FC<AppProps> = ({ ssrPath }) => {
   });
   
   const [jobsWithCompany, setJobsWithCompany] = useState<JobWithCompany[]>([]);
-  const [allCompanies, setAllCompanies] = useState<Company[]>([]);
-  const [allRawJobs, setAllRawJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handlePopState = () => {
       setCurrentPage(parsePath(window.location.pathname));
     };
-
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const refreshData = async () => {
-    setLoading(true);
+  // Fetch only what's needed for the public views
+  const fetchEssentialData = async () => {
     try {
-      const [jwc, companies, rawJobs] = await Promise.all([
-        storage.getJobsWithCompanies(),
-        storage.getCompanies(),
-        storage.getJobs()
-      ]);
-      setJobsWithCompany(jwc);
-      setAllCompanies(companies);
-      setAllRawJobs(rawJobs);
+      const data = await storage.getJobsWithCompanies();
+      setJobsWithCompany(data);
     } catch (e) {
-      console.error("Failed to fetch data from Supabase", e);
+      console.error("Failed to fetch jobs", e);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    refreshData();
+    fetchEssentialData();
   }, []);
 
   const navigate = (page: string) => {
     setCurrentPage(page);
     let newPath = '/';
-    
     if (page === 'home') newPath = '/';
     else if (page === 'admin') newPath = '/admin';
     else if (page.startsWith('category:')) {
@@ -106,6 +90,7 @@ const App: React.FC<AppProps> = ({ ssrPath }) => {
   };
 
   const renderPage = () => {
+    // Show loading only for initial data fetch
     if (loading && jobsWithCompany.length === 0) return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
@@ -113,7 +98,9 @@ const App: React.FC<AppProps> = ({ ssrPath }) => {
     );
 
     if (currentPage === 'home') return <Home onNavigate={navigate} featuredJobs={jobsWithCompany.slice(0, 5)} />;
-    if (currentPage === 'admin') return <AdminDashboard companies={allCompanies} jobs={allRawJobs} onRefresh={refreshData} />;
+    
+    // Admin Dashboard now handles its own fetching to keep the Home page fast
+    if (currentPage === 'admin') return <AdminDashboard onRefresh={fetchEssentialData} />;
     
     if (currentPage.startsWith('category:')) {
       const catKey = currentPage.split(':')[1];
