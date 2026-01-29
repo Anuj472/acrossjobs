@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { JobWithCompany } from '../types';
 import { ICONS } from '../constants';
 import { formatSalary } from '../lib/utils/format';
+import { formatJobDescription } from '../lib/utils/html';
 import LinkedInReferralButton from '../components/jobs/LinkedInReferralButton';
 
 interface JobDetailPageProps {
@@ -132,7 +132,7 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ job, onNavigate }) => {
                   </h2>
                   <div 
                     className="rich-content"
-                    dangerouslySetInnerHTML={{ __html: job.description }} 
+                    dangerouslySetInnerHTML={{ __html: formatJobDescription(job.description) }} 
                   />
                 </section>
               )}
@@ -145,7 +145,7 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ job, onNavigate }) => {
                   </h2>
                   <div 
                     className="rich-content"
-                    dangerouslySetInnerHTML={{ __html: job.responsibilities }} 
+                    dangerouslySetInnerHTML={{ __html: formatJobDescription(job.responsibilities) }} 
                   />
                 </section>
               )}
@@ -158,7 +158,7 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ job, onNavigate }) => {
                   </h2>
                   <div 
                     className="rich-content"
-                    dangerouslySetInnerHTML={{ __html: job.requirements }} 
+                    dangerouslySetInnerHTML={{ __html: formatJobDescription(job.requirements) }} 
                   />
                 </section>
               )}
@@ -171,7 +171,7 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ job, onNavigate }) => {
                   </h2>
                   <div 
                     className="rich-content"
-                    dangerouslySetInnerHTML={{ __html: job.benefits }} 
+                    dangerouslySetInnerHTML={{ __html: formatJobDescription(job.benefits) }} 
                   />
                 </section>
               )}
