@@ -51,11 +51,11 @@ try {
 /**
  * FIX: 'Converting circular structure to JSON'
  * Do not log the raw 'e.target' because DOM nodes contain circular references to React Fibers.
- * If the environment stringifies logs, it will crash.
  */
 window.addEventListener('click', (e) => {
   const target = e.target as HTMLElement;
   if (target) {
-    console.debug(`AcrossJob: Interaction -> click at <${target.tagName.toLowerCase()}> .${target.className.split(' ').join('.')}`);
+    const info = `tag:${target.tagName.toLowerCase()} class:${target.className || 'none'}`;
+    console.debug(`AcrossJob: Interaction -> click at [${info}]`);
   }
 }, { passive: true });
