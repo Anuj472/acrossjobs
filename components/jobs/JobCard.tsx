@@ -19,8 +19,10 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
     setMounted(true);
   }, []);
 
-  const handleClick = (e: React.MouseEvent) => {
-    // We handle the click for the entire card
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('JobCard clicked:', job.id, job.title);
     onSelect(job);
   };
 
@@ -45,6 +47,14 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
   return (
     <div 
       onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect(job);
+        }
+      }}
       className={`bg-white border border-slate-200 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group overflow-hidden ${
         isGrid ? 'flex flex-col p-6' : 'flex flex-col sm:flex-row items-start sm:items-center p-5 gap-5'
       }`}
