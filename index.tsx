@@ -4,38 +4,41 @@ import App from './App';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
+  throw new Error("AcrossJob: Could not find root element to mount to");
 }
 
+console.info("AcrossJob: Client-side JS bundle is running.");
+
 /**
- * Check if the root element has children.
- * If it does, we assume SSR was successful and we should hydrate.
- * Otherwise, we fall back to standard createRoot rendering.
+ * Check if the root element has children from SSR.
  */
 const hasSSRContent = rootElement.hasChildNodes() && rootElement.innerText.trim().length > 0;
 
 try {
   if (hasSSRContent) {
+    console.debug("AcrossJob: Found SSR content, attempting hydration.");
     ReactDOM.hydrateRoot(
       rootElement,
       <React.StrictMode>
         <App />
       </React.StrictMode>
     );
-    console.debug("Hydration successful");
+    console.debug("AcrossJob: Hydration success.");
   } else {
+    console.debug("AcrossJob: No SSR content, performing fresh client render.");
     const root = ReactDOM.createRoot(rootElement);
     root.render(
       <React.StrictMode>
         <App />
       </React.StrictMode>
     );
-    console.debug("Client-side render successful");
   }
 } catch (error) {
-  console.error("React Mounting Error:", error);
-  // Fallback: if hydration fails, try to re-render from scratch to recover UI
-  if (hasSSRContent) {
+  console.error("AcrossJob: Hydration failure, falling back to createRoot.", error);
+  // Total recovery: wipe existing HTML and force a fresh client-side render
+  // This is the safety net that fixes 'unclickable' sites if SSR and Client differ too much.
+  if (rootElement) {
+    rootElement.innerHTML = '';
     const root = ReactDOM.createRoot(rootElement);
     root.render(
       <React.StrictMode>
@@ -44,3 +47,15 @@ try {
     );
   }
 }
+
+/**
+ * FIX: 'Converting circular structure to JSON'
+ * Do not log the raw 'e.target' because DOM nodes contain circular references to React Fibers.
+ * If the environment stringifies logs, it will crash.
+ */
+window.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement;
+  if (target) {
+    console.debug(`AcrossJob: Interaction -> click at <${target.tagName.toLowerCase()}> .${target.className.split(' ').join('.')}`);
+  }
+}, { passive: true });

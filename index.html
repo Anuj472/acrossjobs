@@ -26,7 +26,6 @@
         word-break: break-word;
       }
 
-      /* Force override any weird inline positioning/styling from source */
       .rich-content * {
         text-align: left !important;
         font-family: 'Inter', sans-serif !important;
@@ -38,7 +37,6 @@
         display: block !important;
       }
 
-      /* Clean up lists */
       .rich-content ul, .rich-content ol {
         margin: 1.5rem 0 1.5rem 1.5rem !important;
         padding: 0 !important;
@@ -53,7 +51,6 @@
         display: list-item !important;
       }
 
-      /* Heading Polish */
       .rich-content h1, .rich-content h2, .rich-content h3, .rich-content h4 {
         color: #0f172a !important; /* slate-900 */
         font-weight: 700 !important;
@@ -72,11 +69,8 @@
         font-weight: 700 !important;
       }
 
-      /* Style ALL links, even those with weird platform classes */
-      .rich-content a, 
-      .rich-content [class*="fui-Link"],
-      .rich-content [class*="Link"] {
-        color: #4f46e5 !important; /* indigo-600 */
+      .rich-content a {
+        color: #4f46e5 !important;
         text-decoration: none !important;
         font-weight: 600 !important;
         border-bottom: 2px solid rgba(79, 70, 229, 0.1) !important;
@@ -84,31 +78,21 @@
         transition: all 0.2s ease-in-out;
       }
 
-      .rich-content a:hover,
-      .rich-content [class*="fui-Link"]:hover {
-        color: #4338ca !important; /* indigo-700 */
+      .rich-content a:hover {
+        color: #4338ca !important;
         border-bottom-color: #4f46e5 !important;
         background-color: rgba(79, 70, 229, 0.05) !important;
       }
 
-      /* Recruitment Platform Containers (Greenhouse/Lever/InMobi) */
       .content-intro, 
-      .content-conclusion,
-      .rich-content .content-intro,
-      .rich-content .content-conclusion {
-        background-color: #f8fafc; /* slate-50 */
+      .content-conclusion {
+        background-color: #f8fafc;
         padding: 2rem !important;
         border-radius: 1rem !important;
         margin-bottom: 2.5rem !important;
         border: 1px solid #f1f5f9 !important;
       }
 
-      .content-conclusion {
-        margin-top: 3rem !important;
-        border-top: 4px solid #e2e8f0 !important;
-      }
-
-      /* Remove empty tags that mess up layout */
       .rich-content br + br {
         display: none;
       }
@@ -120,10 +104,10 @@
   <script type="importmap">
 {
   "imports": {
+    "react": "https://esm.sh/react@19.0.0",
     "react-dom": "https://esm.sh/react-dom@19.0.0",
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "react-dom/server": "https://esm.sh/react-dom@19.0.0/server",
-    "react": "https://esm.sh/react@19.0.0",
     "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
     "lucide-react": "https://esm.sh/lucide-react@0.463.0?external=react",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10",

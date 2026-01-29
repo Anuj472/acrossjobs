@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { JobWithCompany } from '../../types';
 import { ICONS } from '../../constants';
@@ -20,6 +19,11 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
     setMounted(true);
   }, []);
 
+  const handleClick = (e: React.MouseEvent) => {
+    // We handle the click for the entire card
+    onSelect(job);
+  };
+
   const renderLogo = () => {
     if (!job.company.logo_url || imgError) {
       return (
@@ -40,8 +44,8 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
 
   return (
     <div 
-      onClick={() => onSelect(job)}
-      className={`bg-white border border-slate-200 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer overflow-hidden ${
+      onClick={handleClick}
+      className={`bg-white border border-slate-200 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group overflow-hidden ${
         isGrid ? 'flex flex-col p-6' : 'flex flex-col sm:flex-row items-start sm:items-center p-5 gap-5'
       }`}
     >
@@ -61,7 +65,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
             {mounted ? formatRelativeDate(job.created_at) : formatAbsoluteDate(job.created_at)}
           </span>
         </div>
-        <h3 className="text-lg font-bold text-slate-900 truncate mb-1">
+        <h3 className="text-lg font-bold text-slate-900 truncate mb-1 group-hover:text-indigo-600 transition-colors">
           {job.title}
         </h3>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
@@ -81,9 +85,9 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
       </div>
 
       <div className={`${isGrid ? 'mt-6' : 'sm:ml-auto'} flex-shrink-0`}>
-        <button className="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-indigo-600 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors">
+        <div className="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-indigo-600 bg-white border border-indigo-200 rounded-lg group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all text-center">
           View Details
-        </button>
+        </div>
       </div>
     </div>
   );

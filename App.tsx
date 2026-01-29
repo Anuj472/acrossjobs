@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import Home from './pages/Home';
@@ -15,7 +15,7 @@ interface AppProps {
 }
 
 const parsePath = (path: string): string => {
-  // Normalize path by removing leading/trailing slashes and query strings for routing
+  if (!path) return 'home';
   const cleanPath = path.split('?')[0].replace(/^\/+|\/+$/g, '');
   
   if (!cleanPath || cleanPath === '') return 'home';
@@ -23,10 +23,9 @@ const parsePath = (path: string): string => {
   
   if (cleanPath.startsWith('jobs/')) {
     const parts = cleanPath.split('/');
-    // Format is jobs/:category/:id
     if (parts.length === 3) return `job:${parts[2]}`;
-    // Format is jobs/:category
-    return `category:${parts[1]}`;
+    if (parts.length === 2) return `category:${parts[1]}`;
+    return 'home';
   }
   
   if (cleanPath === 'about-us') return 'page:about';
@@ -38,6 +37,7 @@ const parsePath = (path: string): string => {
 };
 
 const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
+  // 1. Initial State from SSR or Window
   const [currentPage, setCurrentPage] = useState<string>(() => {
     if (ssrPath) return parsePath(ssrPath);
     if (typeof window !== 'undefined') return parsePath(window.location.pathname);
@@ -45,7 +45,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   });
   
   const [jobsWithCompany, setJobsWithCompany] = useState<JobWithCompany[]>(() => {
-    if (initialJobs) return initialJobs;
+    if (initialJobs && initialJobs.length > 0) return initialJobs;
     if (typeof window !== 'undefined' && (window as any).INITIAL_DATA) {
       return (window as any).INITIAL_DATA;
     }
@@ -56,37 +56,11 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     return jobsWithCompany.length === 0;
   });
 
-  useEffect(() => {
-    const handlePopState = () => {
-      setCurrentPage(parsePath(window.location.pathname));
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  const fetchEssentialData = async () => {
-    // Only fetch if we don't have data yet
-    if (jobsWithCompany.length > 0) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const data = await storage.getJobsWithCompanies();
-      setJobsWithCompany(data);
-    } catch (e) {
-      console.error("Failed to fetch jobs", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEssentialData();
-  }, []);
-
-  const navigate = (page: string) => {
+  // 2. Navigation Logic
+  const navigate = useCallback((page: string) => {
+    console.info(`AcrossJob: Navigation Triggered -> ${page}`);
     setCurrentPage(page);
+    
     let newPath = '/';
     if (page === 'home') newPath = '/';
     else if (page === 'admin') newPath = '/admin';
@@ -105,11 +79,43 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     else if (page === 'page:terms') newPath = '/terms';
 
     if (typeof window !== 'undefined') {
-      window.history.pushState(null, '', newPath);
+      window.history.pushState({ page }, '', newPath);
       window.scrollTo(0, 0);
+    }
+  }, [jobsWithCompany]);
+
+  // 3. Sync state with back/forward buttons
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      console.debug("AcrossJob: Browser Back/Forward navigation detected.");
+      setCurrentPage(parsePath(window.location.pathname));
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const fetchEssentialData = async () => {
+    if (jobsWithCompany.length > 0) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      console.debug("AcrossJob: Loading jobs from Supabase...");
+      const data = await storage.getJobsWithCompanies();
+      setJobsWithCompany(data);
+    } catch (e) {
+      console.error("AcrossJob: Storage fetch failed", e);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchEssentialData();
+  }, []);
+
+  // 4. Component Router
   const renderPage = () => {
     if (loading && jobsWithCompany.length === 0) return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -132,9 +138,12 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
       if (job) return <JobDetailPage job={job} onNavigate={navigate} />;
       return (
         <div className="p-20 text-center">
-          <p className="text-slate-500 mb-4">Job not found.</p>
-          <button onClick={() => navigate('home')} className="text-indigo-600 font-bold hover:underline">
-            Back to Home
+          <p className="text-slate-500 mb-6 font-medium">Job listing not found or has expired.</p>
+          <button 
+            onClick={() => navigate('home')} 
+            className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg"
+          >
+            Return to Homepage
           </button>
         </div>
       );
