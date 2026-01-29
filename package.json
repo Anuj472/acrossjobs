@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "echo 'Build started' && exit 0"
+    "build": "echo 'Skipping frontend build, using SSR Functions' && exit 0"
   },
   "dependencies": {
     "react": "^19.0.0",

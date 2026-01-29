@@ -9,14 +9,14 @@ interface Env {
   };
 }
 
-// Added PagesFunction type definition to fix 'Cannot find name' error
-type PagesFunction<Env = any> = (context: {
-  request: Request;
-  env: Env;
-  params: Record<string, string | string[]>;
-  waitUntil: (promise: Promise<any>) => void;
-  next: (input?: Request | string, init?: RequestInit) => Promise<Response>;
-  data: Record<string, unknown>;
+/**
+ * Local definition for PagesFunction to fix compilation error when Cloudflare types 
+ * are not globally available in the development environment.
+ */
+type PagesFunction<E = any> = (context: { 
+  request: Request; 
+  env: E; 
+  [key: string]: any; 
 }) => Response | Promise<Response>;
 
 /**
@@ -27,32 +27,30 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
   const url = new URL(request.url);
 
-  // Allow static assets (images, js, css) to be served normally
-  // We check for common extensions to skip SSR for them
+  // 1. Check if the request is for a static asset
   const isStaticAsset = /\.(js|css|png|jpg|jpeg|gif|svg|ico|json|txt|map)$/.test(url.pathname);
+  
+  // 2. If it's a static asset, let Cloudflare serve it directly
   if (isStaticAsset || url.pathname.startsWith('/api/')) {
     return env.ASSETS.fetch(request);
   }
 
-  // 1. Fetch the original index.html template from static assets
+  // 3. For all other routes, perform SSR
+  // First, get the base index.html template
   const response = await env.ASSETS.fetch(request);
-  if (!response.ok) {
-    return response;
-  }
+  if (!response.ok) return response;
   
   const html = await response.text();
 
   try {
-    // 2. Render the React App to string
-    // We pass the current path to the App component so it knows what to render
+    // Render the React App to string
     const appHtml = renderToString(
       <React.StrictMode>
         <App ssrPath={url.pathname} />
       </React.StrictMode>
     );
 
-    // 3. Inject the rendered HTML into the template's root div
-    // We use a simple replace. Ensure index.html has <div id="root"></div> exactly.
+    // Inject into the root div
     const ssrHtml = html.replace(
       '<div id="root"></div>',
       `<div id="root">${appHtml}</div>`
@@ -66,7 +64,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     });
   } catch (error) {
     console.error('SSR Error:', error);
-    // Fallback to client-side only rendering if SSR fails
+    // Fallback to client-side only rendering
     return new Response(html, {
       headers: { 'content-type': 'text/html;charset=UTF-8' },
     });
