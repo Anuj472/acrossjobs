@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Briefcase, 
@@ -12,7 +11,9 @@ import {
   ChevronRight,
   Plus,
   TrendingUp,
-  Megaphone
+  Megaphone,
+  DollarSign,
+  Scale
 } from 'lucide-react';
 import { JobCategory } from './types';
 
@@ -46,6 +47,20 @@ export const JOB_CATEGORIES: JobCategory[] = [
     description: 'Creative and analytical roles in brand, growth, and communications.'
   },
   {
+    id: 'finance',
+    label: 'Finance',
+    slug: 'finance',
+    icon: 'finance',
+    description: 'Financial planning, analysis, and accounting roles.'
+  },
+  {
+    id: 'legal',
+    label: 'Legal',
+    slug: 'legal',
+    icon: 'legal',
+    description: 'Legal counsel, compliance, and regulatory affairs positions.'
+  },
+  {
     id: 'research-development',
     label: 'R&D',
     slug: 'research-development',
@@ -60,6 +75,8 @@ export const ICONS = {
   flask: <FlaskConical className="w-5 h-5" />,
   sales: <TrendingUp className="w-5 h-5" />,
   marketing: <Megaphone className="w-5 h-5" />,
+  finance: <DollarSign className="w-5 h-5" />,
+  legal: <Scale className="w-5 h-5" />,
   mapPin: <MapPin className="w-4 h-4" />,
   globe: <Globe className="w-4 h-4" />,
   building: <Building2 className="w-4 h-4" />,
