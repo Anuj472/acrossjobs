@@ -9,7 +9,10 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleNavClick = (page: string) => {
+  const handleNavClick = (e: React.MouseEvent<HTMLButtonElement>, page: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Navigation clicked:', page);
     onNavigate(page);
     setIsOpen(false);
   };
@@ -21,8 +24,8 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
           <div className="flex items-center">
             <button 
               type="button"
-              onClick={() => handleNavClick('home')}
-              className="flex-shrink-0 flex items-center gap-2"
+              onClick={(e) => handleNavClick(e, 'home')}
+              className="flex-shrink-0 flex items-center gap-2 cursor-pointer"
             >
               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold italic">
                 AJ
@@ -34,8 +37,8 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => handleNavClick(`category:${cat.id}`)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  onClick={(e) => handleNavClick(e, `category:${cat.id}`)}
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                     currentPage.startsWith(`category:${cat.id}`)
                       ? 'bg-indigo-50 text-indigo-700'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -51,7 +54,7 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
             <button 
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 focus:outline-none cursor-pointer"
             >
               <span className="sr-only">Open main menu</span>
               <svg className={`${isOpen ? 'hidden' : 'block'} h-6 w-6`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,8 +74,8 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
             <button
               key={cat.id}
               type="button"
-              onClick={() => handleNavClick(`category:${cat.id}`)}
-              className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+              onClick={(e) => handleNavClick(e, `category:${cat.id}`)}
+              className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 cursor-pointer"
             >
               {cat.label}
             </button>
