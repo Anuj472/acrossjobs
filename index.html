@@ -16,7 +16,7 @@
 
     <!-- Tailwind CSS CDN with plugins -->
     <script src="https://cdn.tailwindcss.com?plugins=typography,forms"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
       body {
         font-family: 'Inter', sans-serif;
@@ -28,11 +28,11 @@
         overflow: hidden;
       }
       
-      /* --- PRETTY PRINT ENGINE FOR RICH CONTENT --- */
+      /* ========== PROFESSIONAL JOB DESCRIPTION STYLING ========== */
       .rich-content {
-        color: #334155 !important; /* slate-700 */
-        font-size: 1.05rem !important;
-        line-height: 1.75 !important;
+        color: #475569 !important; /* slate-600 */
+        font-size: 1rem !important;
+        line-height: 1.8 !important;
         word-break: break-word;
       }
 
@@ -42,73 +42,230 @@
         max-width: 100%;
       }
 
+      /* Paragraphs */
       .rich-content p {
-        margin-bottom: 1.5rem !important;
+        margin-bottom: 1.25rem !important;
         display: block !important;
+        color: #475569 !important;
       }
 
-      .rich-content ul, .rich-content ol {
-        margin: 1.5rem 0 1.5rem 1.5rem !important;
-        padding: 0 !important;
+      .rich-content p:last-child {
+        margin-bottom: 0 !important;
+      }
+
+      /* Lists */
+      .rich-content ul, 
+      .rich-content ol {
+        margin: 1.5rem 0 1.5rem 0 !important;
+        padding-left: 1.75rem !important;
       }
       
-      .rich-content ul { list-style-type: disc !important; }
-      .rich-content ol { list-style-type: decimal !important; }
+      .rich-content ul { 
+        list-style-type: disc !important; 
+      }
+      
+      .rich-content ol { 
+        list-style-type: decimal !important; 
+      }
 
       .rich-content li {
         margin-bottom: 0.75rem !important;
         padding-left: 0.5rem !important;
         display: list-item !important;
+        line-height: 1.7 !important;
+        color: #475569 !important;
       }
 
-      .rich-content h1, .rich-content h2, .rich-content h3, .rich-content h4 {
+      .rich-content li:last-child {
+        margin-bottom: 0 !important;
+      }
+
+      /* Nested lists */
+      .rich-content ul ul,
+      .rich-content ol ol,
+      .rich-content ul ol,
+      .rich-content ol ul {
+        margin: 0.5rem 0 0.5rem 1.25rem !important;
+      }
+
+      /* Headings */
+      .rich-content h1, 
+      .rich-content h2, 
+      .rich-content h3, 
+      .rich-content h4,
+      .rich-content h5,
+      .rich-content h6 {
         color: #0f172a !important; /* slate-900 */
         font-weight: 700 !important;
         margin-top: 2.5rem !important;
         margin-bottom: 1.25rem !important;
         line-height: 1.3 !important;
-        letter-spacing: -0.01em !important;
+        letter-spacing: -0.015em !important;
       }
 
       .rich-content h1 { font-size: 1.875rem !important; }
       .rich-content h2 { font-size: 1.5rem !important; }
       .rich-content h3 { font-size: 1.25rem !important; }
+      .rich-content h4 { font-size: 1.125rem !important; }
+      .rich-content h5 { font-size: 1rem !important; font-weight: 600 !important; }
+      .rich-content h6 { font-size: 0.95rem !important; font-weight: 600 !important; text-transform: uppercase; letter-spacing: 0.05em !important; color: #64748b !important; }
 
-      .rich-content strong, .rich-content b {
+      /* First heading has less top margin */
+      .rich-content h1:first-child,
+      .rich-content h2:first-child,
+      .rich-content h3:first-child,
+      .rich-content h4:first-child {
+        margin-top: 0 !important;
+      }
+
+      /* Bold and strong text */
+      .rich-content strong, 
+      .rich-content b {
         color: #1e293b !important; /* slate-800 */
         font-weight: 700 !important;
       }
 
+      /* Emphasis */
+      .rich-content em,
+      .rich-content i {
+        font-style: italic !important;
+        color: #64748b !important;
+      }
+
+      /* Links */
       .rich-content a {
-        color: #4f46e5 !important;
+        color: #4f46e5 !important; /* indigo-600 */
         text-decoration: none !important;
-        font-weight: 600 !important;
-        border-bottom: 2px solid rgba(79, 70, 229, 0.1) !important;
-        padding-bottom: 1px;
-        transition: all 0.2s ease-in-out;
+        font-weight: 500 !important;
+        border-bottom: 1px solid rgba(79, 70, 229, 0.3) !important;
+        padding-bottom: 2px;
+        transition: all 0.15s ease-in-out;
       }
 
       .rich-content a:hover {
-        color: #4338ca !important;
+        color: #4338ca !important; /* indigo-700 */
         border-bottom-color: #4f46e5 !important;
         background-color: rgba(79, 70, 229, 0.05) !important;
       }
 
-      .content-intro, 
-      .content-conclusion {
-        background-color: #f8fafc;
-        padding: 2rem !important;
+      /* Special divs (content-intro, content-conclusion from Greenhouse) */
+      .rich-content .content-intro, 
+      .rich-content .content-conclusion {
+        background: linear-gradient(to bottom, #f8fafc, #ffffff) !important;
+        padding: 1.75rem !important;
         border-radius: 1rem !important;
-        margin-bottom: 2.5rem !important;
-        border: 1px solid #f1f5f9 !important;
+        margin: 1.5rem 0 2rem 0 !important;
+        border-left: 4px solid #4f46e5 !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
       }
 
+      .rich-content .content-intro h2,
+      .rich-content .content-conclusion h2 {
+        margin-top: 0 !important;
+        font-size: 1.25rem !important;
+      }
+
+      /* Code blocks (if any) */
+      .rich-content code {
+        background-color: #f1f5f9 !important;
+        color: #e11d48 !important;
+        padding: 0.2em 0.4em !important;
+        border-radius: 0.25rem !important;
+        font-size: 0.9em !important;
+        font-family: 'Monaco', 'Courier New', monospace !important;
+      }
+
+      .rich-content pre {
+        background-color: #0f172a !important;
+        color: #e2e8f0 !important;
+        padding: 1.25rem !important;
+        border-radius: 0.75rem !important;
+        overflow-x: auto !important;
+        margin: 1.5rem 0 !important;
+      }
+
+      .rich-content pre code {
+        background: transparent !important;
+        color: inherit !important;
+        padding: 0 !important;
+      }
+
+      /* Blockquotes */
+      .rich-content blockquote {
+        border-left: 4px solid #cbd5e1 !important;
+        padding-left: 1.25rem !important;
+        margin: 1.5rem 0 !important;
+        font-style: italic !important;
+        color: #64748b !important;
+      }
+
+      /* Tables (if any) */
+      .rich-content table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin: 1.5rem 0 !important;
+      }
+
+      .rich-content th,
+      .rich-content td {
+        border: 1px solid #e2e8f0 !important;
+        padding: 0.75rem !important;
+        text-align: left !important;
+      }
+
+      .rich-content th {
+        background-color: #f8fafc !important;
+        font-weight: 600 !important;
+        color: #0f172a !important;
+      }
+
+      .rich-content tr:nth-child(even) {
+        background-color: #f9fafb !important;
+      }
+
+      /* HR separator */
+      .rich-content hr {
+        border: none !important;
+        border-top: 2px solid #e2e8f0 !important;
+        margin: 2.5rem 0 !important;
+      }
+
+      /* Clean up excessive line breaks */
       .rich-content br + br {
-        display: none;
+        display: none !important;
       }
       
       .rich-content p:empty {
         display: none !important;
+      }
+
+      /* Video embeds */
+      .rich-content video {
+        max-width: 100% !important;
+        height: auto !important;
+        border-radius: 0.75rem !important;
+        margin: 1.5rem 0 !important;
+      }
+
+      /* Span data attributes (from Greenhouse) */
+      .rich-content span[data-sheets-root] {
+        display: block !important;
+        margin-bottom: 0.75rem !important;
+      }
+
+      /* Remove extra spacing from common formatting issues */
+      .rich-content > *:first-child {
+        margin-top: 0 !important;
+      }
+
+      .rich-content > *:last-child {
+        margin-bottom: 0 !important;
+      }
+
+      /* Hashtags */
+      .rich-content p:last-child {
+        color: #64748b !important;
+        font-size: 0.9rem !important;
       }
     </style>
   </head>
