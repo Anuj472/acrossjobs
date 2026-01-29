@@ -14,7 +14,22 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs }) => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Search submitted:', search, location);
     onNavigate(`category:all?q=${search}&l=${location}`);
+  };
+
+  const handleCategoryClick = (e: React.MouseEvent, categoryId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Category clicked:', categoryId);
+    onNavigate(`category:${categoryId}`);
+  };
+
+  const handleViewAllClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('View all clicked');
+    onNavigate('category:all');
   };
 
   return (
@@ -60,7 +75,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs }) => {
             </div>
             <button 
               type="submit"
-              className="bg-indigo-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-indigo-500 transition-all"
+              className="bg-indigo-600 text-white font-bold px-8 py-3 rounded-xl hover:bg-indigo-500 transition-all cursor-pointer"
             >
               Search Jobs
             </button>
@@ -82,7 +97,15 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs }) => {
           {JOB_CATEGORIES.map((cat) => (
             <div 
               key={cat.id}
-              onClick={() => onNavigate(`category:${cat.id}`)}
+              onClick={(e) => handleCategoryClick(e, cat.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onNavigate(`category:${cat.id}`);
+                }
+              }}
               className="group bg-white p-8 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:shadow-xl transition-all cursor-pointer text-center"
             >
               <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-6 mx-auto group-hover:bg-indigo-600 group-hover:text-white transition-all">
@@ -109,8 +132,8 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs }) => {
               <p className="text-slate-600">Freshly posted roles from top-tier companies.</p>
             </div>
             <button 
-              onClick={() => onNavigate('category:all')}
-              className="hidden sm:flex items-center gap-1 text-indigo-600 font-semibold hover:text-indigo-700"
+              onClick={handleViewAllClick}
+              className="hidden sm:flex items-center gap-1 text-indigo-600 font-semibold hover:text-indigo-700 cursor-pointer"
             >
               View All Jobs {ICONS.chevronRight}
             </button>
@@ -121,14 +144,17 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs }) => {
               <JobCard 
                 key={job.id} 
                 job={job} 
-                onSelect={(j) => onNavigate(`job:${j.id}`)} 
+                onSelect={(j) => {
+                  console.log('Job selected from Home:', j.id);
+                  onNavigate(`job:${j.id}`);
+                }} 
               />
             ))}
           </div>
 
           <button 
-            onClick={() => onNavigate('category:all')}
-            className="sm:hidden w-full mt-8 py-4 bg-white border border-slate-200 rounded-xl font-bold text-slate-600"
+            onClick={handleViewAllClick}
+            className="sm:hidden w-full mt-8 py-4 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 cursor-pointer"
           >
             View All Jobs
           </button>
