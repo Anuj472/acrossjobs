@@ -167,7 +167,15 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     
     if (currentPage.startsWith('category:')) {
       const catKey = currentPage.split(':')[1];
-      return <CategoryPage categoryKey={catKey} onNavigate={navigate} allJobs={jobsWithCompany} />;
+      // CRITICAL FIX: Add key prop to force complete re-mount when category changes
+      return (
+        <CategoryPage 
+          key={catKey} 
+          categoryKey={catKey} 
+          onNavigate={navigate} 
+          allJobs={jobsWithCompany} 
+        />
+      );
     }
     
     if (currentPage.startsWith('job:')) {
