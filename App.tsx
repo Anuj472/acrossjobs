@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
@@ -16,18 +15,25 @@ interface AppProps {
 }
 
 const parsePath = (path: string): string => {
-  const cleanPath = path.replace(/^\/+|\/+$/g, '');
+  // Normalize path by removing leading/trailing slashes and query strings for routing
+  const cleanPath = path.split('?')[0].replace(/^\/+|\/+$/g, '');
+  
   if (!cleanPath || cleanPath === '') return 'home';
   if (cleanPath === 'admin') return 'admin';
+  
   if (cleanPath.startsWith('jobs/')) {
     const parts = cleanPath.split('/');
+    // Format is jobs/:category/:id
     if (parts.length === 3) return `job:${parts[2]}`;
+    // Format is jobs/:category
     return `category:${parts[1]}`;
   }
+  
   if (cleanPath === 'about-us') return 'page:about';
   if (cleanPath === 'contact') return 'page:contact';
   if (cleanPath === 'privacy') return 'page:privacy';
   if (cleanPath === 'terms') return 'page:terms';
+  
   return 'home';
 };
 
@@ -38,7 +44,6 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     return 'home';
   });
   
-  // Use initialData from props (SSR) or window (Client Hydration) or empty array
   const [jobsWithCompany, setJobsWithCompany] = useState<JobWithCompany[]>(() => {
     if (initialJobs) return initialJobs;
     if (typeof window !== 'undefined' && (window as any).INITIAL_DATA) {
@@ -48,7 +53,6 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   });
 
   const [loading, setLoading] = useState(() => {
-    // If we have initial data, we aren't "loading" the main list anymore
     return jobsWithCompany.length === 0;
   });
 
@@ -61,7 +65,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   }, []);
 
   const fetchEssentialData = async () => {
-    // Only fetch if we don't have data yet (e.g. CSR navigation or refresh)
+    // Only fetch if we don't have data yet
     if (jobsWithCompany.length > 0) {
       setLoading(false);
       return;
@@ -107,7 +111,6 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   };
 
   const renderPage = () => {
-    // Show loading only for initial data fetch if no data exists
     if (loading && jobsWithCompany.length === 0) return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
@@ -127,7 +130,14 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
       const jobId = currentPage.split(':')[1];
       const job = jobsWithCompany.find(j => j.id === jobId);
       if (job) return <JobDetailPage job={job} onNavigate={navigate} />;
-      return <div className="p-20 text-center">Job not found. <button onClick={() => navigate('home')} className="text-indigo-600 font-bold">Back Home</button></div>;
+      return (
+        <div className="p-20 text-center">
+          <p className="text-slate-500 mb-4">Job not found.</p>
+          <button onClick={() => navigate('home')} className="text-indigo-600 font-bold hover:underline">
+            Back to Home
+          </button>
+        </div>
+      );
     }
     
     if (currentPage === 'page:about') return <AboutUs />;

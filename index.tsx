@@ -1,4 +1,3 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -13,20 +12,35 @@ if (!rootElement) {
  * If it does, we assume SSR was successful and we should hydrate.
  * Otherwise, we fall back to standard createRoot rendering.
  */
-const hasSSRContent = rootElement.hasChildNodes();
+const hasSSRContent = rootElement.hasChildNodes() && rootElement.innerText.trim().length > 0;
 
-if (hasSSRContent) {
-  ReactDOM.hydrateRoot(
-    rootElement,
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
-} else {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
+try {
+  if (hasSSRContent) {
+    ReactDOM.hydrateRoot(
+      rootElement,
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+    console.debug("Hydration successful");
+  } else {
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+    console.debug("Client-side render successful");
+  }
+} catch (error) {
+  console.error("React Mounting Error:", error);
+  // Fallback: if hydration fails, try to re-render from scratch to recover UI
+  if (hasSSRContent) {
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+  }
 }
