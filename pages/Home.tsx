@@ -134,47 +134,6 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs }) => {
           </button>
         </div>
       </section>
-
-      {/* How it Works */}
-      <section className="max-w-7xl mx-auto px-4 w-full">
-        <div className="bg-indigo-600 rounded-3xl p-10 md:p-20 text-white flex flex-col md:flex-row gap-12 items-center">
-          <div className="md:w-1/2">
-            <h2 className="text-3xl md:text-4xl font-extrabold mb-6">Revolutionize Your Job Search</h2>
-            <div className="space-y-8">
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 font-bold">1</div>
-                <div>
-                  <h4 className="font-bold text-xl mb-1">Browse Smart</h4>
-                  <p className="text-indigo-100">Find vetted roles at world-class companies across three specialized categories.</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 font-bold">2</div>
-                <div>
-                  <h4 className="font-bold text-xl mb-1">Analyze & Prep</h4>
-                  <p className="text-indigo-100">Get deep insights into salary, requirements, and benefits before you apply.</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 font-bold">3</div>
-                <div>
-                  <h4 className="font-bold text-xl mb-1">Connect directly</h4>
-                  <p className="text-indigo-100">Use our LinkedIn Referral tool to find decision-makers and request an introduction.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="md:w-1/2">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-2xl">
-              <img 
-                src="https://picsum.photos/seed/jobforge/600/400" 
-                alt="AcrossJob Dashboard" 
-                className="rounded-xl shadow-lg border border-white/10"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 };

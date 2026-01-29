@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ICONS, JOB_CATEGORIES } from '../../constants';
 
@@ -10,13 +9,19 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const handleNavClick = (page: string) => {
+    onNavigate(page);
+    setIsOpen(false);
+  };
+
   return (
     <nav className="bg-white border-b border-slate-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <button 
-              onClick={() => onNavigate('home')}
+              type="button"
+              onClick={() => handleNavClick('home')}
               className="flex-shrink-0 flex items-center gap-2"
             >
               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold italic">
@@ -28,7 +33,8 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
               {JOB_CATEGORIES.map((cat) => (
                 <button
                   key={cat.id}
-                  onClick={() => onNavigate(`category:${cat.id}`)}
+                  type="button"
+                  onClick={() => handleNavClick(`category:${cat.id}`)}
                   className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     currentPage.startsWith(`category:${cat.id}`)
                       ? 'bg-indigo-50 text-indigo-700'
@@ -43,6 +49,7 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
           
           <div className="md:hidden flex items-center">
             <button 
+              type="button"
               onClick={() => setIsOpen(!isOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 focus:outline-none"
             >
@@ -63,10 +70,8 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
           {JOB_CATEGORIES.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => {
-                onNavigate(`category:${cat.id}`);
-                setIsOpen(false);
-              }}
+              type="button"
+              onClick={() => handleNavClick(`category:${cat.id}`)}
               className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50"
             >
               {cat.label}
