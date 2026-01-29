@@ -7,6 +7,13 @@ interface FooterProps {
 }
 
 const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+  const handleNavClick = (e: React.MouseEvent<HTMLButtonElement>, page: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Footer navigation clicked:', page);
+    onNavigate(page);
+  };
+
   return (
     <footer className="bg-slate-900 text-slate-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -29,8 +36,8 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               {JOB_CATEGORIES.map(cat => (
                 <li key={cat.id}>
                   <button 
-                    onClick={() => onNavigate(`category:${cat.id}`)}
-                    className="hover:text-indigo-400 transition-colors text-left"
+                    onClick={(e) => handleNavClick(e, `category:${cat.id}`)}
+                    className="hover:text-indigo-400 transition-colors text-left cursor-pointer"
                   >
                     {cat.label}
                   </button>
@@ -43,16 +50,16 @@ const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <h3 className="text-white font-semibold mb-4">Company</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <button onClick={() => onNavigate('page:about')} className="hover:text-indigo-400 transition-colors text-left">About Us</button>
+                <button onClick={(e) => handleNavClick(e, 'page:about')} className="hover:text-indigo-400 transition-colors text-left cursor-pointer">About Us</button>
               </li>
               <li>
-                <button onClick={() => onNavigate('page:contact')} className="hover:text-indigo-400 transition-colors text-left">Contact</button>
+                <button onClick={(e) => handleNavClick(e, 'page:contact')} className="hover:text-indigo-400 transition-colors text-left cursor-pointer">Contact</button>
               </li>
               <li>
-                <button onClick={() => onNavigate('page:privacy')} className="hover:text-indigo-400 transition-colors text-left">Privacy Policy</button>
+                <button onClick={(e) => handleNavClick(e, 'page:privacy')} className="hover:text-indigo-400 transition-colors text-left cursor-pointer">Privacy Policy</button>
               </li>
               <li>
-                <button onClick={() => onNavigate('page:terms')} className="hover:text-indigo-400 transition-colors text-left">Terms of Service</button>
+                <button onClick={(e) => handleNavClick(e, 'page:terms')} className="hover:text-indigo-400 transition-colors text-left cursor-pointer">Terms of Service</button>
               </li>
             </ul>
           </div>
