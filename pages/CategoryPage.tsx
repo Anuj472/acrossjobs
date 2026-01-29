@@ -53,13 +53,33 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
     });
   }, [allJobs, actualCategory, search, location, jobType]);
 
+  const handleBreadcrumbClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Breadcrumb home clicked');
+    onNavigate('home');
+  };
+
+  const handleClearFilters = (e: React.MouseEvent) => {
+    e.preventDefault();
+    console.log('Filters cleared');
+    setSearch('');
+    setLocation('');
+    setJobType('all');
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="mb-10">
         <nav className="flex mb-4 text-sm text-slate-500" aria-label="Breadcrumb">
           <ol className="flex items-center space-x-2">
             <li>
-              <button onClick={() => onNavigate('home')} className="hover:text-indigo-600 transition-colors">Home</button>
+              <button 
+                type="button"
+                onClick={handleBreadcrumbClick} 
+                className="hover:text-indigo-600 transition-colors cursor-pointer"
+              >
+                Home
+              </button>
             </li>
             <li className="flex items-center space-x-2">
               <span className="text-slate-300">/</span>
@@ -116,12 +136,9 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
               </div>
 
               <button 
-                onClick={() => {
-                  setSearch('');
-                  setLocation('');
-                  setJobType('all');
-                }}
-                className="w-full text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors pt-2"
+                type="button"
+                onClick={handleClearFilters}
+                className="w-full text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors pt-2 cursor-pointer"
               >
                 Clear all filters
               </button>
@@ -136,7 +153,10 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
                 <JobCard 
                   key={job.id} 
                   job={job} 
-                  onSelect={(j) => onNavigate(`job:${j.id}`)} 
+                  onSelect={(j) => {
+                    console.log('Job selected from CategoryPage:', j.id);
+                    onNavigate(`job:${j.id}`);
+                  }} 
                 />
               ))}
             </div>
@@ -148,12 +168,9 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
               <h3 className="text-xl font-bold text-slate-900 mb-2">No matching jobs</h3>
               <p className="text-slate-500 mb-6">Try broadening your search or location.</p>
               <button 
-                onClick={() => {
-                  setSearch('');
-                  setLocation('');
-                  setJobType('all');
-                }}
-                className="px-6 py-2 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-all"
+                type="button"
+                onClick={handleClearFilters}
+                className="px-6 py-2 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-all cursor-pointer"
               >
                 Reset Filters
               </button>
