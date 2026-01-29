@@ -1,6 +1,5 @@
-
 export type JobType = 'Remote' | 'On-site' | 'Hybrid' | 'Freelance' | 'Contract';
-export type JobCategoryType = 'management' | 'it' | 'research-development' | 'sales' | 'marketing';
+export type JobCategoryType = 'management' | 'it' | 'research-development' | 'sales' | 'marketing' | 'finance' | 'legal';
 
 export interface Company {
   id: string;
