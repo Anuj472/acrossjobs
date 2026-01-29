@@ -22,13 +22,35 @@ export const storage = {
   },
 
   getJobsWithCompanies: async (): Promise<JobWithCompany[]> => {
-    const { data, error } = await supabase
-      .from('jobs')
-      .select('*, company:companies(*)')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
+    let allJobs: JobWithCompany[] = [];
+    let from = 0;
+    const batchSize = 1000;
+    let hasMore = true;
+
+    console.log('📥 Starting job fetch with pagination...');
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*, company:companies(*)')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .range(from, from + batchSize - 1);
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        allJobs = [...allJobs, ...data];
+        console.log(`✅ Fetched batch: ${data.length} jobs (Total: ${allJobs.length})`);
+        from += batchSize;
+        hasMore = data.length === batchSize;
+      } else {
+        hasMore = false;
+      }
+    }
+    
+    console.log(`✅ Total jobs loaded: ${allJobs.length}`);
+    return allJobs;
   },
 
   getJobById: async (id: string): Promise<JobWithCompany | null> => {
