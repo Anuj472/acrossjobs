@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { ICONS, JOB_CATEGORIES, REMOTE_STATUSES } from '../constants';
 import { JobWithCompany } from '../types';
@@ -19,6 +18,14 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
   const [location, setLocation] = useState('');
   const [jobType, setJobType] = useState<string>('all');
 
+  // CRITICAL FIX: Reset filters when category changes
+  useEffect(() => {
+    console.log('🔄 Category changed to:', actualCategory);
+    setSearch('');
+    setLocation('');
+    setJobType('all');
+  }, [actualCategory]);
+
   // Handle initial search from URL
   useEffect(() => {
     if (categoryKey.includes('?')) {
@@ -32,7 +39,15 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
                        currentCategory ? currentCategory.label : 'All Jobs';
 
   const filteredJobs = useMemo(() => {
-    return allJobs.filter(job => {
+    console.log('🔍 Filtering jobs:', {
+      totalJobs: allJobs.length,
+      category: actualCategory,
+      search,
+      location,
+      jobType
+    });
+
+    const filtered = allJobs.filter(job => {
       // Category check
       const matchesCategory = actualCategory === 'all' || job.category === actualCategory;
       
@@ -51,6 +66,9 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
       
       return matchesCategory && matchesSearch && matchesLocation && matchesType;
     });
+
+    console.log('✅ Filtered result:', filtered.length, 'jobs');
+    return filtered;
   }, [allJobs, actualCategory, search, location, jobType]);
 
   const handleBreadcrumbClick = (e: React.MouseEvent) => {
@@ -147,35 +165,42 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
         </aside>
 
         <main className="flex-1">
-          {filteredJobs.length > 0 ? (
-            <div className="space-y-4">
-              {filteredJobs.map(job => (
-                <JobCard 
-                  key={job.id} 
-                  job={job} 
-                  onSelect={(j) => {
-                    console.log('Job selected from CategoryPage:', j.id);
-                    onNavigate(`job:${j.id}`);
-                  }} 
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white border border-dashed border-slate-300 rounded-3xl p-20 text-center">
-              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-6">
-                {ICONS.search}
+          {/* CRITICAL FIX: Key prop forces re-render when category changes */}
+          <div key={actualCategory}>
+            {filteredJobs.length > 0 ? (
+              <div className="space-y-4">
+                {filteredJobs.map(job => (
+                  <JobCard 
+                    key={job.id} 
+                    job={job} 
+                    onSelect={(j) => {
+                      console.log('Job selected from CategoryPage:', j.id);
+                      onNavigate(`job:${j.id}`);
+                    }} 
+                  />
+                ))}
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">No matching jobs</h3>
-              <p className="text-slate-500 mb-6">Try broadening your search or location.</p>
-              <button 
-                type="button"
-                onClick={handleClearFilters}
-                className="px-6 py-2 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-all cursor-pointer"
-              >
-                Reset Filters
-              </button>
-            </div>
-          )}
+            ) : (
+              <div className="bg-white border border-dashed border-slate-300 rounded-3xl p-20 text-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-6">
+                  {ICONS.search}
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">No matching jobs</h3>
+                <p className="text-slate-500 mb-6">
+                  {actualCategory === 'sales' || actualCategory === 'marketing' || actualCategory === 'finance' || actualCategory === 'legal' 
+                    ? 'These jobs will appear after you run a fresh harvest in jobcurator with the updated company list.'
+                    : 'Try broadening your search or location.'}
+                </p>
+                <button 
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="px-6 py-2 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-all cursor-pointer"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            )}
+          </div>
         </main>
       </div>
     </div>
