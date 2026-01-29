@@ -1,10 +1,40 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Project ID: pfjzheljgnhuxzjbqkpm
-const SUPABASE_URL = 'https://pfjzheljgnhuxzjbqkpm.supabase.co';
-// Note: In a production environment, this should be an environment variable.
-// Since you provided the DB URL, I'm assuming you have the anon key set up.
-const SUPABASE_ANON_KEY = 'sb_publishable_xiIKs63wugMipzKUh_rK3A_dv847JJ3'; 
+/**
+ * Safely retrieves environment variables from either the server-side process.env
+ * or the client-side window.ENV injected by our SSR function.
+ */
+const getEnvVar = (key: string): string => {
+  // Check process.env (Node/SSR environment)
+  if (typeof process !== 'undefined' && process.env && process.env[key]) {
+    return process.env[key] as string;
+  }
+  
+  // Check window.ENV (Client browser environment, injected by SSR)
+  if (typeof window !== 'undefined' && (window as any).ENV && (window as any).ENV[key]) {
+    return (window as any).ENV[key];
+  }
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return '';
+};
+
+const SUPABASE_URL = getEnvVar('SUPABASE_URL');
+const SUPABASE_ANON_KEY = getEnvVar('SUPABASE_ANON_KEY');
+
+// Log a warning if keys are missing but don't crash the whole module import
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.warn(
+    'Supabase environment variables are missing. Please ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in the environment.'
+  );
+}
+
+/**
+ * Initialize the Supabase client.
+ * We provide fallback 'placeholder' strings only if the keys are actually missing 
+ * to prevent the 'supabaseUrl is required' exception from crashing the app bundle immediately.
+ */
+export const supabase = createClient(
+  SUPABASE_URL || 'https://placeholder.supabase.co', 
+  SUPABASE_ANON_KEY || 'placeholder-key'
+);

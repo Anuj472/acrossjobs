@@ -8,10 +8,11 @@ import JobDetailPage from './pages/JobDetailPage';
 import AdminDashboard from './pages/AdminDashboard';
 import { AboutUs, Contact, PrivacyPolicy, TermsOfService } from './pages/StaticPages';
 import { storage } from './db/storage';
-import { JobWithCompany, Company, Job } from './types';
+import { JobWithCompany } from './types';
 
 interface AppProps {
   ssrPath?: string;
+  initialJobs?: JobWithCompany[];
 }
 
 const parsePath = (path: string): string => {
@@ -30,15 +31,26 @@ const parsePath = (path: string): string => {
   return 'home';
 };
 
-const App: React.FC<AppProps> = ({ ssrPath }) => {
+const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   const [currentPage, setCurrentPage] = useState<string>(() => {
     if (ssrPath) return parsePath(ssrPath);
     if (typeof window !== 'undefined') return parsePath(window.location.pathname);
     return 'home';
   });
   
-  const [jobsWithCompany, setJobsWithCompany] = useState<JobWithCompany[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Use initialData from props (SSR) or window (Client Hydration) or empty array
+  const [jobsWithCompany, setJobsWithCompany] = useState<JobWithCompany[]>(() => {
+    if (initialJobs) return initialJobs;
+    if (typeof window !== 'undefined' && (window as any).INITIAL_DATA) {
+      return (window as any).INITIAL_DATA;
+    }
+    return [];
+  });
+
+  const [loading, setLoading] = useState(() => {
+    // If we have initial data, we aren't "loading" the main list anymore
+    return jobsWithCompany.length === 0;
+  });
 
   useEffect(() => {
     const handlePopState = () => {
@@ -48,8 +60,13 @@ const App: React.FC<AppProps> = ({ ssrPath }) => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Fetch only what's needed for the public views
   const fetchEssentialData = async () => {
+    // Only fetch if we don't have data yet (e.g. CSR navigation or refresh)
+    if (jobsWithCompany.length > 0) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await storage.getJobsWithCompanies();
       setJobsWithCompany(data);
@@ -90,7 +107,7 @@ const App: React.FC<AppProps> = ({ ssrPath }) => {
   };
 
   const renderPage = () => {
-    // Show loading only for initial data fetch
+    // Show loading only for initial data fetch if no data exists
     if (loading && jobsWithCompany.length === 0) return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
@@ -99,7 +116,6 @@ const App: React.FC<AppProps> = ({ ssrPath }) => {
 
     if (currentPage === 'home') return <Home onNavigate={navigate} featuredJobs={jobsWithCompany.slice(0, 5)} />;
     
-    // Admin Dashboard now handles its own fetching to keep the Home page fast
     if (currentPage === 'admin') return <AdminDashboard onRefresh={fetchEssentialData} />;
     
     if (currentPage.startsWith('category:')) {
