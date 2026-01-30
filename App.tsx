@@ -56,6 +56,9 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   const [loading, setLoading] = useState(() => {
     return jobsWithCompany.length === 0;
   });
+  
+  const [loadingAllJobs, setLoadingAllJobs] = useState(false);
+  const [allJobsLoaded, setAllJobsLoaded] = useState(false);
 
   // 2. Navigation Logic with Enhanced Debugging
   const navigate = useCallback((page: string) => {
@@ -104,13 +107,15 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
         currentPage,
         jobCount: jobsWithCompany.length,
         loading,
+        loadingAllJobs,
+        allJobsLoaded,
         navigate: (page: string) => {
           console.log('🔧 Manual navigation triggered:', page);
           navigate(page);
         }
       };
     }
-  }, [currentPage, jobsWithCompany.length, loading, navigate]);
+  }, [currentPage, jobsWithCompany.length, loading, loadingAllJobs, allJobsLoaded, navigate]);
 
   // 3. Sync state with back/forward buttons
   useEffect(() => {
@@ -123,6 +128,36 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  // 4. Load ALL jobs in background if SSR only provided partial data
+  useEffect(() => {
+    const loadAllJobs = async () => {
+      // Check if SSR provided partial data
+      const isPartialSSR = typeof window !== 'undefined' && (window as any).SSR_PARTIAL_DATA === true;
+      
+      if (!isPartialSSR || allJobsLoaded || loadingAllJobs) {
+        return;
+      }
+      
+      console.log('🔄 SSR provided partial data. Loading ALL jobs in background...');
+      setLoadingAllJobs(true);
+      
+      try {
+        const allJobs = await storage.getJobsWithCompanies();
+        console.log(`✅ Loaded ALL ${allJobs.length} jobs from database`);
+        setJobsWithCompany(allJobs);
+        setAllJobsLoaded(true);
+      } catch (error) {
+        console.error('❌ Failed to load all jobs:', error);
+      } finally {
+        setLoadingAllJobs(false);
+      }
+    };
+    
+    // Delay loading by 1 second to let the page render first
+    const timer = setTimeout(loadAllJobs, 1000);
+    return () => clearTimeout(timer);
+  }, [allJobsLoaded, loadingAllJobs]);
 
   const fetchEssentialData = async () => {
     if (jobsWithCompany.length > 0) {
@@ -151,7 +186,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     console.log('📄 Current page changed to:', currentPage);
   }, [currentPage]);
 
-  // 4. Component Router
+  // 5. Component Router
   const renderPage = () => {
     console.log('🎨 Rendering page:', currentPage);
     
@@ -209,7 +244,17 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar onNavigate={navigate} currentPage={currentPage} />
-      <main className="flex-grow">{renderPage()}</main>
+      <main className="flex-grow">
+        {renderPage()}
+        
+        {/* Loading indicator for background job fetch */}
+        {loadingAllJobs && (
+          <div className="fixed bottom-4 right-4 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-50">
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+            <span className="text-sm font-medium">Loading all {jobsWithCompany.length}+ jobs...</span>
+          </div>
+        )}
+      </main>
       <Footer onNavigate={navigate} />
     </div>
   );
