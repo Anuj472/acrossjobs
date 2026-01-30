@@ -20,20 +20,20 @@ interface PagesFunction<Env = any> {
 }
 
 /**
- * Fetch jobs with HARD LIMIT to prevent Worker resource exhaustion
- * Maximum 500 jobs to stay within CPU time limits
+ * Fetch INITIAL jobs for fast SSR (500 jobs max)
+ * Client will load ALL jobs after page hydration
  */
-async function fetchJobsOptimized(supabase: any): Promise<any[]> {
-  const MAX_JOBS = 500; // Hard limit to prevent resource exhaustion
+async function fetchInitialJobs(supabase: any): Promise<any[]> {
+  const INITIAL_LIMIT = 500; // Fast initial load for SSR
   const BATCH_SIZE = 250; // Smaller batches for faster processing
   
   let allJobs: any[] = [];
   let from = 0;
   let hasMore = true;
   let batches = 0;
-  const maxBatches = Math.ceil(MAX_JOBS / BATCH_SIZE);
+  const maxBatches = Math.ceil(INITIAL_LIMIT / BATCH_SIZE);
 
-  console.log(`📥 SSR: Fetching max ${MAX_JOBS} jobs...`);
+  console.log(`📥 SSR: Fetching initial ${INITIAL_LIMIT} jobs for fast page load...`);
 
   while (hasMore && batches < maxBatches) {
     const startTime = Date.now();
@@ -56,26 +56,31 @@ async function fetchJobsOptimized(supabase: any): Promise<any[]> {
       allJobs = [...allJobs, ...data];
       console.log(`✅ SSR: Batch ${batches + 1}: ${data.length} jobs in ${elapsed}ms (Total: ${allJobs.length})`);
       from += BATCH_SIZE;
-      hasMore = data.length === BATCH_SIZE && allJobs.length < MAX_JOBS;
+      hasMore = data.length === BATCH_SIZE && allJobs.length < INITIAL_LIMIT;
       batches++;
     } else {
       hasMore = false;
     }
     
     // Stop if we've reached the limit
-    if (allJobs.length >= MAX_JOBS) {
-      console.log(`⚠️ SSR: Reached max limit of ${MAX_JOBS} jobs`);
+    if (allJobs.length >= INITIAL_LIMIT) {
+      console.log(`✅ SSR: Initial ${INITIAL_LIMIT} jobs loaded for SSR. Client will fetch remaining jobs.`);
       hasMore = false;
     }
   }
   
-  console.log(`✅ SSR: Total jobs loaded: ${allJobs.length}`);
+  console.log(`✅ SSR: Total initial jobs: ${allJobs.length}`);
   return allJobs;
 }
 
 /**
  * Cloudflare Pages Function with SSR, Data Prefetching, and Edge Caching.
  * Optimized to prevent "Worker exceeded resource limits" errors.
+ * 
+ * Strategy:
+ * - SSR loads first 500 jobs for fast initial render
+ * - Client-side JavaScript loads ALL remaining jobs after hydration
+ * - This prevents Worker timeouts while still showing all 5000+ jobs
  */
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
@@ -107,7 +112,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     // 2. Create Supabase client
     const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
     
-    // 3. Fetch HTML and jobs with timeout protection
+    // 3. Fetch HTML and initial jobs with timeout protection
     const timeoutController = new AbortController();
     const timeout = setTimeout(() => {
       console.warn('⚠️ SSR: Request timeout - using fallback');
@@ -117,7 +122,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     try {
       const [htmlResponse, initialJobs] = await Promise.all([
         env.ASSETS.fetch(request),
-        fetchJobsOptimized(supabase)
+        fetchInitialJobs(supabase)
       ]);
       
       clearTimeout(timeout);
@@ -136,15 +141,18 @@ export const onRequest: PagesFunction<Env> = async (context) => {
             SUPABASE_URL: ${JSON.stringify(env.SUPABASE_URL || '')},
             SUPABASE_ANON_KEY: ${JSON.stringify(env.SUPABASE_ANON_KEY || '')}
           };
+          // Initial SSR data (500 jobs for fast load)
           window.INITIAL_DATA = ${JSON.stringify(initialJobs)};
-          console.log('📊 SSR: Loaded ' + ${initialJobs.length} + ' jobs into window.INITIAL_DATA');
+          // Flag to tell client to load remaining jobs
+          window.SSR_PARTIAL_DATA = true;
+          console.log('📊 SSR: Loaded ' + ${initialJobs.length} + ' initial jobs. Client will fetch remaining jobs...');
         </script>
       `;
       
       html = html.replace('</head>', `${envScript}</head>`);
 
       const elapsed = Date.now() - startTime;
-      console.log(`✅ SSR: Response ready with ${initialJobs.length} jobs in ${elapsed}ms`);
+      console.log(`✅ SSR: Response ready with ${initialJobs.length} initial jobs in ${elapsed}ms`);
 
       const response = new Response(html, {
         headers: { 
@@ -152,7 +160,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
           // Cache for 5 minutes at edge, revalidate in background
           'Cache-Control': 's-maxage=300, stale-while-revalidate=600',
           'X-Jobs-Count': initialJobs.length.toString(),
-          'X-Render-Time': `${elapsed}ms`
+          'X-Render-Time': `${elapsed}ms`,
+          'X-SSR-Partial': 'true' // Indicates more jobs available client-side
         },
       });
 
