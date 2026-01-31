@@ -5,6 +5,7 @@ import Footer from './components/layout/Footer';
 import Landing from './pages/Landing';
 import Auth from './pages/Auth';
 import AuthCallback from './pages/AuthCallback';
+import ResetPassword from './pages/ResetPassword';
 import Home from './pages/Home';
 import CategoryPage from './pages/CategoryPage';
 import JobDetailPage from './pages/JobDetailPage';
@@ -24,6 +25,7 @@ const parsePath = (path: string): string => {
   
   if (!cleanPath || cleanPath === '') return 'landing';
   if (cleanPath === 'auth/callback') return 'auth:callback';
+  if (cleanPath === 'auth/reset-password') return 'auth:reset';
   if (cleanPath === 'auth' || cleanPath === 'login' || cleanPath === 'signup') return 'auth';
   if (cleanPath === 'admin') return 'admin';
   
@@ -107,6 +109,12 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
         console.log('🚪 User signed out');
         navigate('landing');
       }
+      
+      // Handle password recovery
+      if (_event === 'PASSWORD_RECOVERY') {
+        console.log('🔑 Password recovery initiated');
+        navigate('auth:reset');
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -138,6 +146,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
       let newPath = '/';
       if (page === 'landing') newPath = '/';
       else if (page === 'auth:callback') newPath = '/auth/callback';
+      else if (page === 'auth:reset') newPath = '/auth/reset-password';
       else if (page === 'auth') newPath = '/auth';
       else if (page === 'home') newPath = '/jobs';
       else if (page === 'admin') newPath = '/admin';
@@ -273,7 +282,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     console.log('🎨 Rendering page:', currentPage, '| User:', user ? 'Auth' : 'Guest', '| Auth Loading:', authLoading);
     
     // Show loading while checking auth (only initially)
-    if (authLoading && currentPage !== 'landing' && currentPage !== 'auth' && currentPage !== 'auth:callback') {
+    if (authLoading && currentPage !== 'landing' && currentPage !== 'auth' && currentPage !== 'auth:callback' && currentPage !== 'auth:reset') {
       return (
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
@@ -284,6 +293,11 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     // OAuth Callback (public)
     if (currentPage === 'auth:callback') {
       return <AuthCallback onAuthSuccess={() => navigate('home')} />;
+    }
+    
+    // Password Reset (public)
+    if (currentPage === 'auth:reset') {
+      return <ResetPassword onNavigate={navigate} />;
     }
     
     // Landing page (public)
@@ -358,7 +372,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   };
 
   // Show minimal navbar for landing and auth pages
-  const showMinimalNav = currentPage === 'landing' || currentPage === 'auth' || currentPage === 'auth:callback';
+  const showMinimalNav = currentPage === 'landing' || currentPage === 'auth' || currentPage === 'auth:callback' || currentPage === 'auth:reset';
 
   return (
     <div className="flex flex-col min-h-screen">
