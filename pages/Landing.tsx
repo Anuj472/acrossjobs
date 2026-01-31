@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Globe, Zap, TrendingUp, Users, Shield } from 'lucide-react';
+import { Briefcase, Globe, Zap, TrendingUp, Users, Shield, Bell, Eye } from 'lucide-react';
 
 interface LandingProps {
   onNavigate: (page: string) => void;
@@ -18,7 +18,7 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full text-sm font-semibold mb-8">
               <Zap className="w-4 h-4" />
-              <span>5,000+ Premium Job Listings</span>
+              <span>5,000+ Jobs • 100% Free • No Signup Required</span>
             </div>
             
             {/* Main Heading */}
@@ -31,27 +31,35 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
             
             {/* Tagline */}
             <p className="text-xl md:text-2xl text-slate-600 mb-12 leading-relaxed">
-              Curated opportunities from top companies worldwide. 
-              <span className="font-semibold text-slate-800">IT, Sales, Marketing, Finance, Legal & More.</span>
+              Browse <span className="font-bold text-slate-900">5,000+ job listings</span> from top companies worldwide.
+              <span className="block mt-2 font-semibold text-slate-800">IT, Sales, Marketing, Finance, Legal, Management, R&D & More.</span>
             </p>
             
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
-                onClick={onSignUpClick}
+                onClick={() => onNavigate('home')}
                 className="group relative px-8 py-4 bg-indigo-600 text-white rounded-xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:scale-105"
               >
-                <span className="relative z-10">Get Started Free</span>
+                <span className="relative z-10 flex items-center gap-2">
+                  <Eye className="w-5 h-5" />
+                  Browse All Jobs Free
+                </span>
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </button>
               
               <button
-                onClick={() => onNavigate('page:about')}
-                className="px-8 py-4 bg-white text-slate-700 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all shadow-md hover:shadow-lg border-2 border-slate-200"
+                onClick={onSignUpClick}
+                className="px-8 py-4 bg-white text-indigo-600 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all shadow-md hover:shadow-lg border-2 border-indigo-200 hover:border-indigo-300 flex items-center gap-2"
               >
-                Learn More
+                <Bell className="w-5 h-5" />
+                Get Job Alerts
               </button>
             </div>
+            
+            <p className="mt-6 text-sm text-slate-500">
+              💡 No registration needed to browse • Subscribe for alerts (optional)
+            </p>
             
             {/* Stats */}
             <div className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
@@ -126,23 +134,22 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4">
               Explore by Industry
             </h2>
-            <p className="text-xl text-slate-600">Find opportunities in your domain</p>
+            <p className="text-xl text-slate-600">Click to view jobs in your domain</p>
           </div>
           
           <div className="grid md:grid-cols-4 gap-4">
             {[
-              { name: 'IT & Engineering', count: '3,200+', color: 'indigo' },
-              { name: 'Sales & Business', count: '800+', color: 'purple' },
-              { name: 'Marketing', count: '450+', color: 'pink' },
-              { name: 'Finance', count: '300+', color: 'blue' },
-              { name: 'Legal', count: '150+', color: 'green' },
-              { name: 'Management', count: '250+', color: 'orange' },
-              { name: 'Research', count: '200+', color: 'teal' },
-              { name: 'Operations', count: '350+', color: 'red' },
+              { name: 'IT & Software', count: '3,200+', category: 'it' },
+              { name: 'Sales', count: '800+', category: 'sales' },
+              { name: 'Marketing', count: '450+', category: 'marketing' },
+              { name: 'Finance', count: '300+', category: 'finance' },
+              { name: 'Legal', count: '150+', category: 'legal' },
+              { name: 'Management', count: '250+', category: 'management' },
+              { name: 'R&D', count: '200+', category: 'research-development' },
             ].map((industry, idx) => (
               <button
                 key={idx}
-                onClick={onSignUpClick}
+                onClick={() => onNavigate(`category:${industry.category}`)}
                 className="p-6 bg-white rounded-xl hover:shadow-lg transition-all border-2 border-slate-100 hover:border-indigo-200 text-left group"
               >
                 <div className="text-lg font-bold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors">
@@ -155,25 +162,29 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
         </div>
       </section>
 
-      {/* Trust Section */}
+      {/* Email Alerts Section - Optional */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-3xl p-12 md:p-16 text-white text-center">
             <div className="max-w-3xl mx-auto">
-              <Users className="w-16 h-16 mx-auto mb-6 opacity-90" />
+              <Bell className="w-16 h-16 mx-auto mb-6 opacity-90" />
               <h2 className="text-4xl md:text-5xl font-black mb-6">
-                Trusted by Thousands
+                Never Miss a Perfect Job
               </h2>
-              <p className="text-xl opacity-90 mb-8 leading-relaxed">
-                Join professionals who found their dream jobs through AcrossJobs. 
-                Your next career move is just one click away.
+              <p className="text-xl opacity-90 mb-4 leading-relaxed">
+                Get personalized job alerts delivered to your inbox based on your preferences.
+              </p>
+              <p className="text-lg opacity-75 mb-8">
+                ✓ Choose categories & job types • ✓ Set salary expectations • ✓ Daily or weekly updates
               </p>
               <button
                 onClick={onSignUpClick}
-                className="px-10 py-5 bg-white text-indigo-600 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all shadow-xl hover:shadow-2xl hover:scale-105"
+                className="px-10 py-5 bg-white text-indigo-600 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all shadow-xl hover:shadow-2xl hover:scale-105 inline-flex items-center gap-2"
               >
-                Start Your Journey
+                <Bell className="w-5 h-5" />
+                Subscribe to Job Alerts (Optional)
               </button>
+              <p className="mt-4 text-sm opacity-75">100% free • Unsubscribe anytime</p>
             </div>
           </div>
         </div>
@@ -186,7 +197,7 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4">
               How It Works
             </h2>
-            <p className="text-xl text-slate-600">Three simple steps to your next opportunity</p>
+            <p className="text-xl text-slate-600">Simple, fast, and completely free</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
@@ -194,9 +205,9 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
               <div className="w-20 h-20 bg-indigo-600 text-white rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-6">
                 1
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-3">Sign Up Free</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">Browse Jobs</h3>
               <p className="text-slate-600">
-                Create your account in seconds using Google, LinkedIn, or GitHub.
+                Instantly access 5,000+ job listings. No signup required, no barriers.
               </p>
             </div>
             
@@ -204,9 +215,9 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
               <div className="w-20 h-20 bg-purple-600 text-white rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-6">
                 2
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-3">Browse Jobs</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">Find Your Match</h3>
               <p className="text-slate-600">
-                Explore 5,000+ curated listings across all industries and locations.
+                Filter by category, location, salary, and more. Discover opportunities that fit you.
               </p>
             </div>
             
@@ -214,9 +225,9 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
               <div className="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center text-3xl font-black mx-auto mb-6">
                 3
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-3">Apply & Succeed</h3>
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">Apply Directly</h3>
               <p className="text-slate-600">
-                One-click apply to your favorite roles and land your dream job.
+                Click to view full details and apply directly to companies. Land your dream job!
               </p>
             </div>
           </div>
@@ -228,17 +239,26 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
         <div className="max-w-4xl mx-auto px-6 text-center">
           <Shield className="w-16 h-16 mx-auto mb-6 text-indigo-600" />
           <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6">
-            Ready to Get Started?
+            Ready to Explore?
           </h2>
           <p className="text-xl text-slate-600 mb-10">
-            Sign up now and unlock access to thousands of opportunities. It's free, fast, and secure.
+            Start browsing thousands of opportunities right now. No signup, no hassle, just jobs.
           </p>
-          <button
-            onClick={onSignUpClick}
-            className="px-12 py-5 bg-indigo-600 text-white rounded-xl font-bold text-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:scale-105"
-          >
-            Create Free Account
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => onNavigate('home')}
+              className="px-12 py-5 bg-indigo-600 text-white rounded-xl font-bold text-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:scale-105"
+            >
+              Browse All Jobs
+            </button>
+            <button
+              onClick={onSignUpClick}
+              className="px-12 py-5 bg-white text-indigo-600 border-2 border-indigo-600 rounded-xl font-bold text-xl hover:bg-indigo-50 transition-all hover:scale-105 inline-flex items-center gap-2"
+            >
+              <Bell className="w-5 h-5" />
+              Get Job Alerts
+            </button>
+          </div>
         </div>
       </section>
     </div>
