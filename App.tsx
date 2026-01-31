@@ -215,7 +215,16 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
       );
     }
 
-    if (currentPage === 'home') return <Home onNavigate={navigate} featuredJobs={jobsWithCompany.slice(0, 5)} />;
+    // Pass ALL jobs for location extraction, but only show first 5
+    if (currentPage === 'home') {
+      return (
+        <Home 
+          onNavigate={navigate} 
+          featuredJobs={jobsWithCompany.slice(0, 5)}
+          allJobs={jobsWithCompany}
+        />
+      );
+    }
     
     if (currentPage === 'admin') return <AdminDashboard onRefresh={fetchEssentialData} />;
     
