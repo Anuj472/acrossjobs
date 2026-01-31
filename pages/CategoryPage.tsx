@@ -46,6 +46,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
       setSearch(params.get('q') || '');
       setLocation(params.get('l') || '');
       setSubcategoryFilter(params.get('subcategory') || '');
+      setExperienceLevel(params.get('exp') || 'all');
     }
   }, [categoryKey]);
 
