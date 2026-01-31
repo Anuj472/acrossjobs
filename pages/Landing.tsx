@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Briefcase, Globe, Zap, TrendingUp, Users, Shield, Bell, Eye, Code, TrendingUp as Chart, DollarSign, Scale, FlaskConical, UserCircle, Megaphone } from 'lucide-react';
 import { JOB_ROLES } from '../constants';
 import { storage } from '../db/storage';
-import { JobWithCompany } from '../types';
 
 interface LandingProps {
   onNavigate: (page: string) => void;
@@ -14,21 +13,20 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
   const [totalJobs, setTotalJobs] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
-  // Fetch real job counts on mount
+  // Fetch REAL job counts on mount
   useEffect(() => {
     const fetchJobCounts = async () => {
       try {
-        const allJobs = await storage.getJobsWithCompanies();
-        setTotalJobs(allJobs.length);
+        // Get total count
+        const total = await storage.getTotalJobCount();
+        setTotalJobs(total);
         
-        // Count jobs by category
-        const counts: Record<string, number> = {};
-        allJobs.forEach(job => {
-          counts[job.category] = (counts[job.category] || 0) + 1;
-        });
-        
+        // Get counts by category (optimized query)
+        const counts = await storage.getJobCountsByCategory();
         setJobCounts(counts);
+        
         setLoading(false);
+        console.log('✅ Job counts loaded:', { total, counts });
       } catch (error) {
         console.error('Failed to fetch job counts:', error);
         setLoading(false);
