@@ -269,7 +269,8 @@ export const ICONS = {
   clock: <Clock className="w-4 h-4" />,
   search: <Search className="w-5 h-5" />,
   chevronRight: <ChevronRight className="w-4 h-4" />,
-  plus: <Plus className="w-5 h-5" />
+  plus: <Plus className="w-5 h-5" />,
+  dollarSign: <DollarSign className="w-4 h-4" />
 };
 
 export const REMOTE_STATUSES = [
