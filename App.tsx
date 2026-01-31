@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import Landing from './pages/Landing';
-import SubscriptionForm from './components/SubscriptionForm';
+import JobSubscription from './pages/JobSubscription';
 import Home from './pages/Home';
 import CategoryPage from './pages/CategoryPage';
 import JobDetailPage from './pages/JobDetailPage';
@@ -196,19 +196,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     
     // Subscribe page
     if (currentPage === 'subscribe') {
-      return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-6">
-          <div className="max-w-2xl mx-auto">
-            <button
-              onClick={() => navigate('landing')}
-              className="mb-6 text-slate-600 hover:text-slate-900 font-medium transition-colors flex items-center gap-2"
-            >
-              ← Back to Home
-            </button>
-            <SubscriptionForm onClose={() => navigate('landing')} />
-          </div>
-        </div>
-      );
+      return <JobSubscription onNavigate={navigate} />;
     }
     
     // Static pages
@@ -266,7 +254,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     return <Landing onNavigate={navigate} onSignUpClick={() => navigate('subscribe')} />;
   };
 
-  // Show minimal navbar for landing page
+  // Show minimal navbar for landing and subscribe pages
   const showMinimalNav = currentPage === 'landing' || currentPage === 'subscribe';
 
   return (
