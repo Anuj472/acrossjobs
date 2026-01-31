@@ -63,10 +63,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     return [];
   });
 
-  const [loading, setLoading] = useState(() => {
-    return jobsWithCompany.length === 0;
-  });
-  
+  const [loading, setLoading] = useState(false);
   const [loadingAllJobs, setLoadingAllJobs] = useState(false);
   const [allJobsLoaded, setAllJobsLoaded] = useState(false);
 
@@ -93,13 +90,22 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('🔄 Auth state changed:', _event);
       setUser(session?.user ?? null);
+      setAuthLoading(false);
       
-      if (_event === 'SIGNED_IN') {
-        console.log('✅ User signed in');
-        navigate('home'); // Go to jobs after login
+      if (_event === 'SIGNED_IN' && session?.user) {
+        console.log('✅ User signed in, redirecting to home...');
+        // Small delay to ensure state is updated
+        setTimeout(() => {
+          navigate('home');
+        }, 100);
+      }
+      
+      if (_event === 'SIGNED_OUT') {
+        console.log('🚪 User signed out');
+        navigate('landing');
       }
     });
 
@@ -172,18 +178,17 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
         loading,
         loadingAllJobs,
         allJobsLoaded,
+        authLoading,
         navigate: (page: string) => {
           console.log('🔧 Manual navigation triggered:', page);
           navigate(page);
         },
         logout: async () => {
           await supabase.auth.signOut();
-          setUser(null);
-          navigate('landing');
         }
       };
     }
-  }, [currentPage, user, jobsWithCompany.length, loading, loadingAllJobs, allJobsLoaded, navigate]);
+  }, [currentPage, user, jobsWithCompany.length, loading, loadingAllJobs, allJobsLoaded, authLoading, navigate]);
 
   // 6. Sync state with back/forward buttons
   useEffect(() => {
@@ -246,6 +251,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
 
     try {
       console.log("📥 Loading jobs from Supabase...");
+      setLoading(true);
       const data = await storage.getJobsWithCompanies();
       console.log(`✅ Loaded ${data.length} jobs`);
       setJobsWithCompany(data);
@@ -257,17 +263,17 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && jobsWithCompany.length === 0) {
       fetchEssentialData();
     }
   }, [user]);
 
   // 8. Component Router
   const renderPage = () => {
-    console.log('🎨 Rendering page:', currentPage, '| User:', user ? 'Auth' : 'Guest');
+    console.log('🎨 Rendering page:', currentPage, '| User:', user ? 'Auth' : 'Guest', '| Auth Loading:', authLoading);
     
-    // Show loading while checking auth
-    if (authLoading) {
+    // Show loading while checking auth (only initially)
+    if (authLoading && currentPage !== 'landing' && currentPage !== 'auth' && currentPage !== 'auth:callback') {
       return (
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
@@ -302,10 +308,12 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
       return null;
     }
     
+    // Show loading only when actively fetching jobs
     if (loading && jobsWithCompany.length === 0) {
       return (
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
+          <p className="text-slate-600 font-medium">Loading jobs...</p>
         </div>
       );
     }
@@ -354,7 +362,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!showMinimalNav && <Navbar onNavigate={navigate} currentPage={currentPage} />}
+      {!showMinimalNav && <Navbar onNavigate={navigate} currentPage={currentPage} user={user} />}
       
       <main className="flex-grow">
         {renderPage()}
