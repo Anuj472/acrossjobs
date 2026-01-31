@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Mail, Briefcase, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
-import { JOB_CATEGORIES } from '../constants';
+import { Mail, Briefcase, MapPin, DollarSign, Clock, CheckCircle, AlertCircle, ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
+import { JOB_CATEGORIES, JOB_ROLES } from '../constants';
 
 interface JobSubscriptionProps {
   onNavigate: (page: string) => void;
@@ -12,6 +12,7 @@ const JobSubscription: React.FC<JobSubscriptionProps> = ({ onNavigate }) => {
     email: '',
     name: '',
     selectedCategories: [] as string[],
+    selectedSubcategories: [] as string[],
     jobType: [] as string[],
     experienceLevel: '',
     location: '',
@@ -19,6 +20,7 @@ const JobSubscription: React.FC<JobSubscriptionProps> = ({ onNavigate }) => {
     notificationFrequency: 'daily',
   });
 
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -31,22 +33,62 @@ const JobSubscription: React.FC<JobSubscriptionProps> = ({ onNavigate }) => {
     { value: 'weekly', label: 'Weekly Summary' },
   ];
 
-  const handleCategoryToggle = (categoryId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      selectedCategories: prev.selectedCategories.includes(categoryId)
-        ? prev.selectedCategories.filter(c => c !== categoryId)
-        : [...prev.selectedCategories, categoryId]
-    }));
+  const toggleCategory = (categoryId: string) => {
+    if (expandedCategories.includes(categoryId)) {
+      setExpandedCategories(expandedCategories.filter(c => c !== categoryId));
+    } else {
+      setExpandedCategories([...expandedCategories, categoryId]);
+    }
   };
 
-  const handleJobTypeToggle = (type: string) => {
-    setFormData(prev => ({
-      ...prev,
-      jobType: prev.jobType.includes(type)
-        ? prev.jobType.filter(t => t !== type)
-        : [...prev.jobType, type]
-    }));
+  const handleCategoryToggle = (categoryId: string) => {
+    const isSelected = formData.selectedCategories.includes(categoryId);
+    
+    if (isSelected) {
+      // Deselect category and all its subcategories
+      const subcategories = Object.keys(JOB_ROLES[categoryId as keyof typeof JOB_ROLES] || {});
+      setFormData(prev => ({
+        ...prev,
+        selectedCategories: prev.selectedCategories.filter(c => c !== categoryId),
+        selectedSubcategories: prev.selectedSubcategories.filter(
+          sub => !subcategories.some(sc => sub.startsWith(`${categoryId}:${sc}`))
+        )
+      }));
+    } else {
+      // Select category
+      setFormData(prev => ({
+        ...prev,
+        selectedCategories: [...prev.selectedCategories, categoryId]
+      }));
+      // Auto-expand to show subcategories
+      if (!expandedCategories.includes(categoryId)) {
+        setExpandedCategories([...expandedCategories, categoryId]);
+      }
+    }
+  };
+
+  const handleSubcategoryToggle = (categoryId: string, subcategory: string) => {
+    const subcategoryKey = `${categoryId}:${subcategory}`;
+    const isSelected = formData.selectedSubcategories.includes(subcategoryKey);
+    
+    if (isSelected) {
+      setFormData(prev => ({
+        ...prev,
+        selectedSubcategories: prev.selectedSubcategories.filter(s => s !== subcategoryKey)
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        selectedSubcategories: [...prev.selectedSubcategories, subcategoryKey]
+      }));
+      // Make sure parent category is selected
+      if (!formData.selectedCategories.includes(categoryId)) {
+        setFormData(prev => ({
+          ...prev,
+          selectedCategories: [...prev.selectedCategories, categoryId]
+        }));
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,6 +113,7 @@ const JobSubscription: React.FC<JobSubscriptionProps> = ({ onNavigate }) => {
             email: formData.email,
             name: formData.name,
             categories: formData.selectedCategories,
+            subcategories: formData.selectedSubcategories,
             job_types: formData.jobType,
             experience_level: formData.experienceLevel,
             location: formData.location,
@@ -92,6 +135,7 @@ const JobSubscription: React.FC<JobSubscriptionProps> = ({ onNavigate }) => {
           email: '',
           name: '',
           selectedCategories: [],
+          selectedSubcategories: [],
           jobType: [],
           experienceLevel: '',
           location: '',
@@ -201,40 +245,99 @@ const JobSubscription: React.FC<JobSubscriptionProps> = ({ onNavigate }) => {
               </div>
             </div>
 
-            {/* Job Categories */}
+            {/* Job Categories with Subcategories */}
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                 <Briefcase className="w-5 h-5 text-indigo-600" />
-                Job Categories *
+                Job Categories & Specializations *
               </h3>
-              <p className="text-sm text-slate-600">Select all that interest you</p>
+              <p className="text-sm text-slate-600">Select categories and optionally choose specific specializations</p>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {JOB_CATEGORIES.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => handleCategoryToggle(category.id)}
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${
-                      formData.selectedCategories.includes(category.id)
-                        ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                        formData.selectedCategories.includes(category.id)
-                          ? 'border-indigo-500 bg-indigo-500'
-                          : 'border-slate-300'
-                      }`}>
-                        {formData.selectedCategories.includes(category.id) && (
-                          <CheckCircle className="w-4 h-4 text-white" />
+              <div className="space-y-3">
+                {JOB_CATEGORIES.map((category) => {
+                  const isExpanded = expandedCategories.includes(category.id);
+                  const isCategorySelected = formData.selectedCategories.includes(category.id);
+                  const subcategories = JOB_ROLES[category.id as keyof typeof JOB_ROLES] || {};
+                  const hasSubcategories = Object.keys(subcategories).length > 0;
+
+                  return (
+                    <div key={category.id} className="border-2 border-slate-200 rounded-xl overflow-hidden">
+                      {/* Category Header */}
+                      <div className="flex items-center gap-3 p-4 bg-slate-50 hover:bg-slate-100 transition-colors">
+                        <button
+                          type="button"
+                          onClick={() => handleCategoryToggle(category.id)}
+                          className={`flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
+                            isCategorySelected
+                              ? 'border-indigo-500 bg-indigo-500'
+                              : 'border-slate-300 hover:border-slate-400'
+                          }`}
+                        >
+                          {isCategorySelected && <CheckCircle className="w-4 h-4 text-white" />}
+                        </button>
+                        
+                        <div className="flex-1" onClick={() => handleCategoryToggle(category.id)}>
+                          <div className="font-bold text-slate-900 cursor-pointer">{category.label}</div>
+                          <div className="text-xs text-slate-500">{Object.keys(subcategories).length} specializations</div>
+                        </div>
+                        
+                        {hasSubcategories && (
+                          <button
+                            type="button"
+                            onClick={() => toggleCategory(category.id)}
+                            className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="w-5 h-5 text-slate-600" />
+                            ) : (
+                              <ChevronRight className="w-5 h-5 text-slate-600" />
+                            )}
+                          </button>
                         )}
                       </div>
-                      <span className="font-semibold">{category.label}</span>
+
+                      {/* Subcategories */}
+                      {isExpanded && hasSubcategories && (
+                        <div className="p-4 bg-white border-t-2 border-slate-200">
+                          <div className="space-y-2">
+                            {Object.entries(subcategories).map(([subcategory, roles]) => {
+                              const subcategoryKey = `${category.id}:${subcategory}`;
+                              const isSelected = formData.selectedSubcategories.includes(subcategoryKey);
+                              
+                              return (
+                                <button
+                                  key={subcategoryKey}
+                                  type="button"
+                                  onClick={() => handleSubcategoryToggle(category.id, subcategory)}
+                                  className={`w-full flex items-start gap-3 p-3 rounded-lg border-2 text-left transition-all ${
+                                    isSelected
+                                      ? 'border-indigo-300 bg-indigo-50'
+                                      : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                                  }`}
+                                >
+                                  <div className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 ${
+                                    isSelected
+                                      ? 'border-indigo-500 bg-indigo-500'
+                                      : 'border-slate-300'
+                                  }`}>
+                                    {isSelected && <CheckCircle className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-slate-900 text-sm">{subcategory}</div>
+                                    <div className="text-xs text-slate-500 mt-1">
+                                      {(roles as string[]).slice(0, 2).join(', ')}
+                                      {(roles as string[]).length > 2 && ` +${(roles as string[]).length - 2} more`}
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -250,7 +353,12 @@ const JobSubscription: React.FC<JobSubscriptionProps> = ({ onNavigate }) => {
                   <button
                     key={type}
                     type="button"
-                    onClick={() => handleJobTypeToggle(type)}
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      jobType: prev.jobType.includes(type)
+                        ? prev.jobType.filter(t => t !== type)
+                        : [...prev.jobType, type]
+                    }))}
                     className={`px-4 py-3 rounded-xl border-2 font-semibold transition-all ${
                       formData.jobType.includes(type)
                         ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
