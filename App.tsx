@@ -205,8 +205,12 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     if (currentPage === 'page:privacy') return <PrivacyPolicy />;
     if (currentPage === 'page:terms') return <TermsOfService />;
     
-    // Show loading when fetching jobs
-    if (loading && jobsWithCompany.length === 0) {
+    // CRITICAL FIX: Show loading for ALL pages that need jobs data
+    const needsJobsData = currentPage === 'home' || 
+                          currentPage.startsWith('category:') || 
+                          currentPage.startsWith('job:');
+    
+    if (needsJobsData && (loading || jobsWithCompany.length === 0)) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
@@ -215,7 +219,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
       );
     }
 
-    // Pass ALL jobs for location extraction, but only show first 5
+    // Pass ALL jobs for location extraction, but only show first 5 as featured
     if (currentPage === 'home') {
       return (
         <Home 
