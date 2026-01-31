@@ -10,6 +10,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import { AboutUs, Contact, PrivacyPolicy, TermsOfService } from './pages/StaticPages';
 import { storage } from './db/storage';
 import { JobWithCompany } from './types';
+import ErrorPage from './pages/ErrorPage';
 
 interface AppProps {
   ssrPath?: string;
@@ -41,7 +42,6 @@ const parsePath = (path: string): string => {
 };
 
 const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
-  // Page Navigation State
   const [currentPage, setCurrentPage] = useState<string>(() => {
     const initialPage = ssrPath ? parsePath(ssrPath) : 
                         (typeof window !== 'undefined' ? parsePath(window.location.pathname) : 'landing');
@@ -60,8 +60,8 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [allJobsLoaded, setAllJobsLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Navigation Logic
   const navigate = useCallback((page: string) => {
     console.group('🔄 AcrossJob Navigation');
     console.log('From:', currentPage);
@@ -103,7 +103,6 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     console.groupEnd();
   }, [currentPage, jobsWithCompany]);
 
-  // Debug helper
   useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).ACROSSJOB_DEBUG = {
@@ -112,15 +111,15 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
         loading,
         loadingMore,
         allJobsLoaded,
+        error,
         navigate: (page: string) => {
           console.log('🔧 Manual navigation triggered:', page);
           navigate(page);
         }
       };
     }
-  }, [currentPage, jobsWithCompany.length, loading, loadingMore, allJobsLoaded, navigate]);
+  }, [currentPage, jobsWithCompany.length, loading, loadingMore, allJobsLoaded, error, navigate]);
 
-  // Sync state with back/forward buttons
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       console.log("⬅️ Browser Back/Forward navigation detected");
@@ -132,19 +131,29 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // LAZY LOADING: Load initial jobs quickly (30 jobs)
+  // LAZY LOADING with timeout and error handling
   const fetchInitialJobs = async () => {
     if (jobsWithCompany.length > 0) {
       setLoading(false);
       return;
     }
 
+    const timeoutDuration = 15000; // 15 second timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout - database took too long to respond')), timeoutDuration);
+    });
+
     try {
       console.log("⚡ Fast loading first 30 jobs...");
       setLoading(true);
+      setError(null);
       
-      // Load only first 30 jobs for instant display
-      const data = await storage.getJobsWithCompanies(30);
+      // Race between data fetch and timeout
+      const data = await Promise.race([
+        storage.getJobsWithCompanies(30),
+        timeoutPromise
+      ]) as JobWithCompany[];
+      
       console.log(`✅ Loaded initial ${data.length} jobs`);
       setJobsWithCompany(data);
       
@@ -154,14 +163,24 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
           loadRemainingJobs();
         }
       }, 500);
-    } catch (e) {
+    } catch (e: any) {
       console.error("❌ Initial fetch failed:", e);
+      const errorMsg = e?.message || 'Failed to load jobs from database';
+      setError(errorMsg);
+      
+      // Log detailed error info for debugging
+      console.error('Error details:', {
+        message: e?.message,
+        name: e?.name,
+        stack: e?.stack,
+        supabaseUrl: (window as any).ENV?.VITE_SUPABASE_URL || 'NOT SET',
+        hasSupabaseKey: !!(window as any).ENV?.VITE_SUPABASE_ANON_KEY
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // LAZY LOADING: Load remaining jobs in background
   const loadRemainingJobs = async () => {
     if (allJobsLoaded || loadingMore) return;
 
@@ -169,13 +188,13 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
       console.log("🔄 Loading remaining jobs in background...");
       setLoadingMore(true);
       
-      // Load ALL jobs
       const allJobs = await storage.getJobsWithCompanies();
       console.log(`✅ Loaded ALL ${allJobs.length} jobs`);
       setJobsWithCompany(allJobs);
       setAllJobsLoaded(true);
     } catch (error) {
       console.error('❌ Failed to load remaining jobs:', error);
+      // Don't set error state for background load failure
     } finally {
       setLoadingMore(false);
     }
@@ -188,46 +207,51 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   }, []);
 
   const fetchEssentialData = async () => {
-    const allJobs = await storage.getJobsWithCompanies();
-    setJobsWithCompany(allJobs);
-    setAllJobsLoaded(true);
+    try {
+      const allJobs = await storage.getJobsWithCompanies();
+      setJobsWithCompany(allJobs);
+      setAllJobsLoaded(true);
+    } catch (e) {
+      console.error('Failed to refresh jobs:', e);
+    }
   };
 
-  // Component Router
   const renderPage = () => {
     console.log('🎨 Rendering page:', currentPage);
     
-    // Landing page
     if (currentPage === 'landing') {
       return <Landing onNavigate={navigate} onSignUpClick={() => navigate('subscribe')} />;
     }
     
-    // Subscribe page
     if (currentPage === 'subscribe') {
       return <JobSubscription onNavigate={navigate} />;
     }
     
-    // Static pages
     if (currentPage === 'page:about') return <AboutUs />;
     if (currentPage === 'page:contact') return <Contact />;
     if (currentPage === 'page:privacy') return <PrivacyPolicy />;
     if (currentPage === 'page:terms') return <TermsOfService />;
     
-    // Show loading ONLY if no jobs at all
     const needsJobsData = currentPage === 'home' || 
                           currentPage.startsWith('category:') || 
                           currentPage.startsWith('job:');
     
+    // Show error page if loading failed
+    if (needsJobsData && error) {
+      return <ErrorPage error={error} onRetry={fetchInitialJobs} />;
+    }
+    
+    // Show loading only if no jobs at all
     if (needsJobsData && loading && jobsWithCompany.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
           <p className="text-slate-600 font-medium">Loading jobs...</p>
+          <p className="text-slate-400 text-sm mt-2">This should only take a few seconds...</p>
         </div>
       );
     }
 
-    // Render with available jobs (even if not all loaded yet)
     if (currentPage === 'home') {
       return (
         <Home 
@@ -275,7 +299,6 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     return <Landing onNavigate={navigate} onSignUpClick={() => navigate('subscribe')} />;
   };
 
-  // Show minimal navbar for landing and subscribe pages
   const showMinimalNav = currentPage === 'landing' || currentPage === 'subscribe';
 
   return (
@@ -285,7 +308,6 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
       <main className="flex-grow">
         {renderPage()}
         
-        {/* Loading indicator for background job fetch */}
         {loadingMore && (
           <div className="fixed bottom-4 right-4 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-50">
             <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
