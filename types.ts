@@ -1,6 +1,6 @@
 export type JobType = 'Remote' | 'On-site' | 'Hybrid' | 'Freelance' | 'Contract';
 export type JobCategoryType = 'management' | 'it' | 'research-development' | 'sales' | 'marketing' | 'finance' | 'legal';
-export type ExperienceLevelType = 'Entry Level' | 'Mid Level' | 'Senior Level' | 'Lead' | 'Executive' | null;
+export type ExperienceLevelType = 'Internship' | 'Entry Level' | 'Mid Level' | 'Senior Level' | 'Lead' | 'Executive' | null;
 
 export interface Company {
   id: string;
