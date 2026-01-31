@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS job_subscriptions (
   email TEXT NOT NULL,
   name TEXT,
   categories TEXT[] NOT NULL DEFAULT '{}',
+  subcategories TEXT[] DEFAULT '{}',
   job_types TEXT[] DEFAULT '{}',
   experience_level TEXT,
   location TEXT,
@@ -26,6 +27,7 @@ CREATE TABLE IF NOT EXISTS job_subscriptions (
 CREATE INDEX IF NOT EXISTS idx_subscriptions_email ON job_subscriptions(email);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_active ON job_subscriptions(is_active) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_subscriptions_categories ON job_subscriptions USING GIN(categories);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_subcategories ON job_subscriptions USING GIN(subcategories);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_created_at ON job_subscriptions(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_unsubscribe ON job_subscriptions(unsubscribe_token);
 
@@ -78,6 +80,11 @@ CREATE POLICY "Users can delete via token"
 COMMENT ON TABLE job_subscriptions IS 'Stores user job alert subscription preferences';
 COMMENT ON COLUMN job_subscriptions.email IS 'User email address for notifications';
 COMMENT ON COLUMN job_subscriptions.categories IS 'Array of job categories (IT, Sales, Marketing, etc.)';
+COMMENT ON COLUMN job_subscriptions.subcategories IS 'Array of specific subcategories (e.g., "it:Software Development", "sales:Technical Sales")';
 COMMENT ON COLUMN job_subscriptions.job_types IS 'Array of job types (Full-time, Part-time, Remote, etc.)';
 COMMENT ON COLUMN job_subscriptions.notification_frequency IS 'How often to send notifications: instant, daily, or weekly';
 COMMENT ON COLUMN job_subscriptions.unsubscribe_token IS 'Unique token for unsubscribe link';
+
+-- Migration script for existing table (if needed)
+-- ALTER TABLE job_subscriptions ADD COLUMN IF NOT EXISTS subcategories TEXT[] DEFAULT '{}';
+-- CREATE INDEX IF NOT EXISTS idx_subscriptions_subcategories ON job_subscriptions USING GIN(subcategories);
