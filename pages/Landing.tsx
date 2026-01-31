@@ -1,5 +1,6 @@
 import React from 'react';
-import { Briefcase, Globe, Zap, TrendingUp, Users, Shield, Bell, Eye } from 'lucide-react';
+import { Briefcase, Globe, Zap, TrendingUp, Users, Shield, Bell, Eye, Code, TrendingUp as Chart, DollarSign, Scale, FlaskConical, UserCircle, Megaphone } from 'lucide-react';
+import { JOB_ROLES } from '../constants';
 
 interface LandingProps {
   onNavigate: (page: string) => void;
@@ -7,6 +8,72 @@ interface LandingProps {
 }
 
 const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
+  const categories = [
+    {
+      id: 'it',
+      name: 'IT & Software',
+      icon: Code,
+      description: 'Software development, infrastructure, and data engineering roles.',
+      count: '3,200+',
+      color: 'indigo',
+      subcategories: Object.keys(JOB_ROLES.it || {})
+    },
+    {
+      id: 'management',
+      name: 'Management',
+      icon: UserCircle,
+      description: 'Executive and managerial positions driving business growth.',
+      count: '250+',
+      color: 'purple',
+      subcategories: Object.keys(JOB_ROLES.management || {})
+    },
+    {
+      id: 'sales',
+      name: 'Sales',
+      icon: TrendingUp,
+      description: 'Strategic roles focused on revenue generation and client relations.',
+      count: '800+',
+      color: 'pink',
+      subcategories: Object.keys(JOB_ROLES.sales || {})
+    },
+    {
+      id: 'marketing',
+      name: 'Marketing',
+      icon: Megaphone,
+      description: 'Creative and analytical roles in brand, growth, and communications.',
+      count: '450+',
+      color: 'orange',
+      subcategories: Object.keys(JOB_ROLES.marketing || {})
+    },
+    {
+      id: 'finance',
+      name: 'Finance',
+      icon: DollarSign,
+      description: 'Financial planning, analysis, and accounting roles.',
+      count: '300+',
+      color: 'blue',
+      subcategories: Object.keys(JOB_ROLES.finance || {})
+    },
+    {
+      id: 'legal',
+      name: 'Legal',
+      icon: Scale,
+      description: 'Legal counsel, compliance, and regulatory affairs positions.',
+      count: '150+',
+      color: 'green',
+      subcategories: Object.keys(JOB_ROLES.legal || {})
+    },
+    {
+      id: 'research-development',
+      name: 'Research & Development',
+      icon: FlaskConical,
+      description: 'Focus on innovation, hardware, and science.',
+      count: '200+',
+      color: 'teal',
+      subcategories: Object.keys(JOB_ROLES['research-development'] || {})
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
       {/* Hero Section */}
@@ -127,37 +194,72 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
         </div>
       </section>
 
-      {/* Industries Section */}
+      {/* Industries Section with Subcategories */}
       <section className="py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-4">
               Explore by Industry
             </h2>
-            <p className="text-xl text-slate-600">Click to view jobs in your domain</p>
+            <p className="text-xl text-slate-600">Find opportunities in your domain</p>
           </div>
           
-          <div className="grid md:grid-cols-4 gap-4">
-            {[
-              { name: 'IT & Software', count: '3,200+', category: 'it' },
-              { name: 'Sales', count: '800+', category: 'sales' },
-              { name: 'Marketing', count: '450+', category: 'marketing' },
-              { name: 'Finance', count: '300+', category: 'finance' },
-              { name: 'Legal', count: '150+', category: 'legal' },
-              { name: 'Management', count: '250+', category: 'management' },
-              { name: 'R&D', count: '200+', category: 'research-development' },
-            ].map((industry, idx) => (
-              <button
-                key={idx}
-                onClick={() => onNavigate(`category:${industry.category}`)}
-                className="p-6 bg-white rounded-xl hover:shadow-lg transition-all border-2 border-slate-100 hover:border-indigo-200 text-left group"
-              >
-                <div className="text-lg font-bold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors">
-                  {industry.name}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {categories.map((category) => {
+              const Icon = category.icon;
+              return (
+                <div
+                  key={category.id}
+                  className="group bg-white rounded-2xl p-6 hover:shadow-xl transition-all border-2 border-slate-100 hover:border-indigo-200"
+                >
+                  {/* Category Header */}
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className={`w-12 h-12 bg-${category.color}-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                      <Icon className={`w-6 h-6 text-${category.color}-600`} />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors">
+                        {category.name}
+                      </h3>
+                      <p className="text-sm text-slate-500 font-semibold">{category.count} jobs</p>
+                    </div>
+                  </div>
+                  
+                  {/* Description */}
+                  <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+                    {category.description}
+                  </p>
+                  
+                  {/* Subcategories */}
+                  <div className="mb-4">
+                    <div className="text-xs font-semibold text-slate-500 uppercase mb-2">Specializations:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {category.subcategories.slice(0, 4).map((subcat, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium"
+                        >
+                          {subcat}
+                        </span>
+                      ))}
+                      {category.subcategories.length > 4 && (
+                        <span className="inline-flex items-center px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-semibold">
+                          +{category.subcategories.length - 4} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Explore Button */}
+                  <button
+                    onClick={() => onNavigate(`category:${category.id}`)}
+                    className="w-full py-2.5 bg-indigo-600 text-white rounded-lg font-semibold text-sm hover:bg-indigo-700 transition-all group-hover:shadow-lg"
+                  >
+                    Explore Jobs →
+                  </button>
                 </div>
-                <div className="text-sm text-slate-500 font-semibold">{industry.count} jobs</div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
