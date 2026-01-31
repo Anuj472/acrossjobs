@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase } from '../lib/supabase';
 import { Job, Company, JobWithCompany } from '../types';
 
 export const storage = {
@@ -11,11 +11,15 @@ export const storage = {
           *,
           company:companies(*)
         `)
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
       
       // Apply limit if provided (for lazy loading)
       if (limit) {
         query = query.limit(limit);
+        console.log(`⚡ Fast loading first ${limit} jobs...`);
+      } else {
+        console.log('📥 Loading ALL jobs...');
       }
       
       const { data, error } = await query;
@@ -27,6 +31,8 @@ export const storage = {
 
       if (!data) return [];
 
+      console.log(`✅ Loaded ${data.length} jobs`);
+      
       // Transform to JobWithCompany format
       return data.map((item: any) => ({
         ...item,
@@ -73,6 +79,7 @@ export const storage = {
           company:companies(*)
         `)
         .eq('category', category)
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
       
       if (limit) {
@@ -90,6 +97,22 @@ export const storage = {
       })) as JobWithCompany[];
     } catch (error) {
       console.error('Error fetching jobs by category:', error);
+      return [];
+    }
+  },
+
+  // Get all companies
+  async getCompanies(): Promise<Company[]> {
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      return data as Company[] || [];
+    } catch (error) {
+      console.error('Error fetching companies:', error);
       return [];
     }
   },
@@ -142,22 +165,6 @@ export const storage = {
     } catch (error) {
       console.error('Error deleting job:', error);
       return false;
-    }
-  },
-
-  // Get all companies
-  async getCompanies(): Promise<Company[]> {
-    try {
-      const { data, error } = await supabase
-        .from('companies')
-        .select('*')
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      return data as Company[] || [];
-    } catch (error) {
-      console.error('Error fetching companies:', error);
-      return [];
     }
   },
 
