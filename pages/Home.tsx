@@ -1,5 +1,5 @@
-import React, { useState, useMemo, memo } from 'react';
-import { ICONS, JOB_CATEGORIES, JOB_ROLES } from '../constants';
+import React, { useState, useMemo, memo, useCallback } from 'react';
+import { ICONS, JOB_CATEGORIES, JOB_ROLES, EXPERIENCE_LEVELS } from '../constants';
 import { JobWithCompany } from '../types';
 import JobCard from '../components/jobs/JobCard';
 
@@ -11,83 +11,75 @@ interface HomeProps {
 
 const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
   const [search, setSearch] = useState('');
-  const [country, setCountry] = useState('');
   const [city, setCity] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('');
+  const [isSearchActive, setIsSearchActive] = useState(false);
 
-  // Extract unique countries from ALL jobs for dropdown
-  const availableCountries = useMemo(() => {
-    const countries = new Set<string>();
-    allJobs.forEach(job => {
-      if (job.location_country) {
-        countries.add(job.location_country);
-      }
-    });
-    return Array.from(countries).sort();
-  }, [allJobs]);
-
-  // Extract cities for selected country
+  // Extract unique cities from ALL jobs (combined city, country)
   const availableCities = useMemo(() => {
-    if (!country) return [];
     const cities = new Set<string>();
     allJobs.forEach(job => {
-      if (job.location_country === country && job.location_city) {
-        cities.add(job.location_city);
+      if (job.location_city && job.location_country) {
+        cities.add(`${job.location_city}, ${job.location_country}`);
       }
     });
     return Array.from(cities).sort();
-  }, [allJobs, country]);
+  }, [allJobs]);
 
-  const experienceLevels = [
-    { value: '', label: 'All Levels' },
-    { value: 'Entry Level', label: 'Entry Level' },
-    { value: 'Mid Level', label: 'Mid Level' },
-    { value: 'Senior Level', label: 'Senior Level' },
-    { value: 'Lead', label: 'Lead' },
-    { value: 'Executive', label: 'Executive' },
-  ];
+  // Filter jobs based on search criteria
+  const filteredJobs = useMemo(() => {
+    if (!isSearchActive) {
+      return featuredJobs; // Show only featured when not searching
+    }
 
-  // Reset city when country changes
-  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCountry(e.target.value);
-    setCity(''); // Reset city
-  };
+    return allJobs.filter(job => {
+      // Keyword check (Title or Company Name)
+      const matchesSearch = !search || 
+        job.title.toLowerCase().includes(search.toLowerCase()) || 
+        job.company.name.toLowerCase().includes(search.toLowerCase());
+      
+      // City check (matches either city or full "city, country")
+      const matchesCity = !city || 
+        `${job.location_city}, ${job.location_country}` === city ||
+        (job.location_city || '').toLowerCase().includes(city.toLowerCase());
 
-  const handleSearch = (e: React.FormEvent) => {
+      // Experience level check
+      const matchesExperience = !experienceLevel || 
+        job.experience_level === experienceLevel;
+      
+      return matchesSearch && matchesCity && matchesExperience;
+    });
+  }, [allJobs, featuredJobs, isSearchActive, search, city, experienceLevel]);
+
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    const location = city ? `${city}, ${country}` : country;
-    console.log('Search submitted:', { search, location, experienceLevel });
-    
-    // Build query params
-    const params = new URLSearchParams();
-    if (search) params.set('q', search);
-    if (location) params.set('l', location);
-    if (experienceLevel) params.set('exp', experienceLevel);
-    
-    const queryString = params.toString();
-    onNavigate(`category:all${queryString ? '?' + queryString : ''}`);
-  };
+    setIsSearchActive(true);
+  }, []);
 
-  const handleCategoryClick = (e: React.MouseEvent, categoryId: string) => {
+  const handleClearSearch = useCallback(() => {
+    setSearch('');
+    setCity('');
+    setExperienceLevel('');
+    setIsSearchActive(false);
+  }, []);
+
+  const handleCategoryClick = useCallback((e: React.MouseEvent, categoryId: string) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Category clicked:', categoryId);
     onNavigate(`category:${categoryId}`);
-  };
+  }, [onNavigate]);
 
-  const handleSubcategoryClick = (e: React.MouseEvent, categoryId: string, subcategory: string) => {
+  const handleSubcategoryClick = useCallback((e: React.MouseEvent, categoryId: string, subcategory: string) => {
     e.stopPropagation();
     e.preventDefault();
-    console.log('Subcategory clicked:', categoryId, subcategory);
     onNavigate(`category:${categoryId}?subcategory=${encodeURIComponent(subcategory)}`);
-  };
+  }, [onNavigate]);
 
-  const handleViewAllClick = (e: React.MouseEvent) => {
+  const handleViewAllClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('View all clicked');
     onNavigate('category:all');
-  };
+  }, [onNavigate]);
 
   return (
     <div className="flex flex-col gap-20 pb-20">
@@ -108,61 +100,46 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
 
           <form 
             onSubmit={handleSearch}
-            className="bg-white p-3 rounded-2xl shadow-2xl grid grid-cols-1 md:grid-cols-12 gap-2 max-w-5xl mx-auto"
+            className="bg-white p-3 rounded-2xl shadow-2xl grid grid-cols-1 md:grid-cols-10 gap-2 max-w-5xl mx-auto"
           >
             {/* Keyword Search */}
             <div className="md:col-span-3 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
               <span className="text-slate-400 mr-2">{ICONS.search}</span>
               <input 
                 type="text" 
-                placeholder="Job title" 
+                placeholder="Job title or company" 
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full outline-none text-slate-900 py-1 text-sm"
               />
             </div>
 
-            {/* Country Dropdown */}
-            <div className="md:col-span-2 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
-              <span className="text-slate-400 mr-2">{ICONS.globe}</span>
-              <select
-                value={country}
-                onChange={handleCountryChange}
-                className="w-full outline-none text-slate-900 py-1 bg-white cursor-pointer text-sm"
-              >
-                <option value="">All Countries</option>
-                {availableCountries.map((c, idx) => (
-                  <option key={idx} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-
             {/* City Dropdown */}
-            <div className="md:col-span-2 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
+            <div className="md:col-span-3 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
               <span className="text-slate-400 mr-2">{ICONS.mapPin}</span>
               <select
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                disabled={!country}
-                className="w-full outline-none text-slate-900 py-1 bg-white cursor-pointer text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full outline-none text-slate-900 py-1 bg-white cursor-pointer text-sm"
               >
-                <option value="">All Cities</option>
-                {availableCities.map((c, idx) => (
-                  <option key={idx} value={c}>{c}</option>
+                <option value="">All Locations</option>
+                {availableCities.map((loc, idx) => (
+                  <option key={idx} value={loc}>{loc}</option>
                 ))}
               </select>
             </div>
 
             {/* Experience Level */}
-            <div className="md:col-span-3 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
+            <div className="md:col-span-2 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
               <span className="text-slate-400 mr-2">{ICONS.briefcase}</span>
               <select
                 value={experienceLevel}
                 onChange={(e) => setExperienceLevel(e.target.value)}
                 className="w-full outline-none text-slate-900 py-1 bg-white cursor-pointer text-sm"
               >
-                {experienceLevels.map((level, idx) => (
-                  <option key={idx} value={level.value}>{level.label}</option>
+                <option value="">All Levels</option>
+                {EXPERIENCE_LEVELS.map((level, idx) => (
+                  <option key={idx} value={level.label}>{level.label}</option>
                 ))}
               </select>
             </div>
@@ -178,72 +155,128 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
             </div>
           </form>
           
+          {/* Clear Search Button */}
+          {isSearchActive && (
+            <button
+              onClick={handleClearSearch}
+              className="mt-4 text-slate-300 hover:text-white text-sm font-medium transition-colors"
+            >
+              ✕ Clear search and show featured jobs
+            </button>
+          )}
+          
           <div className="mt-6 flex flex-wrap justify-center gap-6 text-slate-400 text-sm">
             <span>Popular: Frontend, Product Manager, DevOps, ML Engineer</span>
           </div>
         </div>
       </section>
 
-      {/* Categories Section with Subcategories */}
-      <section className="max-w-7xl mx-auto px-4 w-full">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">Browse by Industry</h2>
-          <p className="text-slate-600">Explore high-impact roles across our primary sectors.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {JOB_CATEGORIES.map((cat) => (
-            <CategoryCard
-              key={cat.id}
-              category={cat}
-              onCategoryClick={handleCategoryClick}
-              onSubcategoryClick={handleSubcategoryClick}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* Latest Jobs Section */}
-      <section className="bg-slate-50 py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-end mb-12">
-            <div>
-              <h2 className="text-3xl font-bold text-slate-900 mb-4">Latest Opportunities</h2>
-              <p className="text-slate-600">Freshly posted roles from top-tier companies.</p>
-            </div>
-            <button 
-              onClick={handleViewAllClick}
-              className="hidden sm:flex items-center gap-1 text-indigo-600 font-semibold hover:text-indigo-700 cursor-pointer"
-            >
-              View All Jobs {ICONS.chevronRight}
-            </button>
+      {/* Search Results or Categories */}
+      {isSearchActive ? (
+        /* Search Results Section */
+        <section className="max-w-7xl mx-auto px-4 w-full">
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-slate-900 mb-2">
+              Search Results
+            </h2>
+            <p className="text-slate-600">
+              Found {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'}
+              {search && ` matching "${search}"`}
+              {city && ` in ${city}`}
+              {experienceLevel && ` for ${experienceLevel}`}
+            </p>
           </div>
           
-          <div className="grid grid-cols-1 gap-4">
-            {featuredJobs.map(job => (
-              <JobCard 
-                key={job.id} 
-                job={job} 
-                onSelect={(j) => {
-                  console.log('Job selected from Home:', j.id);
-                  onNavigate(`job:${j.id}`);
-                }} 
-              />
-            ))}
-          </div>
+          {filteredJobs.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4">
+              {filteredJobs.map(job => (
+                <JobCard 
+                  key={job.id} 
+                  job={job} 
+                  onSelect={(j) => onNavigate(`job:${j.id}`)} 
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white border border-dashed border-slate-300 rounded-3xl p-20 text-center">
+              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-6">
+                {ICONS.search}
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">No jobs found</h3>
+              <p className="text-slate-500 mb-6">
+                Try adjusting your search criteria or clearing filters
+              </p>
+              <button 
+                onClick={handleClearSearch}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 transition-all cursor-pointer"
+              >
+                Clear Search
+              </button>
+            </div>
+          )}
+        </section>
+      ) : (
+        /* Default View: Categories + Featured Jobs */
+        <>
+          {/* Categories Section */}
+          <section className="max-w-7xl mx-auto px-4 w-full">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold text-slate-900 mb-4">Browse by Industry</h2>
+              <p className="text-slate-600">Explore high-impact roles across our primary sectors.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {JOB_CATEGORIES.map((cat) => (
+                <CategoryCard
+                  key={cat.id}
+                  category={cat}
+                  onCategoryClick={handleCategoryClick}
+                  onSubcategoryClick={handleSubcategoryClick}
+                />
+              ))}
+            </div>
+          </section>
 
-          <button 
-            onClick={handleViewAllClick}
-            className="sm:hidden w-full mt-8 py-4 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 cursor-pointer"
-          >
-            View All Jobs
-          </button>
-        </div>
-      </section>
+          {/* Latest Jobs Section */}
+          <section className="bg-slate-50 py-20 px-4">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex justify-between items-end mb-12">
+                <div>
+                  <h2 className="text-3xl font-bold text-slate-900 mb-4">Latest Opportunities</h2>
+                  <p className="text-slate-600">Freshly posted roles from top-tier companies.</p>
+                </div>
+                <button 
+                  onClick={handleViewAllClick}
+                  className="hidden sm:flex items-center gap-1 text-indigo-600 font-semibold hover:text-indigo-700 cursor-pointer"
+                >
+                  View All Jobs {ICONS.chevronRight}
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4">
+                {featuredJobs.map(job => (
+                  <JobCard 
+                    key={job.id} 
+                    job={job} 
+                    onSelect={(j) => onNavigate(`job:${j.id}`)} 
+                  />
+                ))}
+              </div>
+
+              <button 
+                onClick={handleViewAllClick}
+                className="sm:hidden w-full mt-8 py-4 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 cursor-pointer"
+              >
+                View All Jobs
+              </button>
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 };
 
-// Memoized CategoryCard component to prevent unnecessary re-renders
+// Memoized CategoryCard component
 interface CategoryCardProps {
   category: typeof JOB_CATEGORIES[0];
   onCategoryClick: (e: React.MouseEvent, categoryId: string) => void;
@@ -251,11 +284,13 @@ interface CategoryCardProps {
 }
 
 const CategoryCard = memo<CategoryCardProps>(({ category, onCategoryClick, onSubcategoryClick }) => {
-  const subcategories = Object.keys(JOB_ROLES[category.id as keyof typeof JOB_ROLES] || {});
+  const subcategories = useMemo(
+    () => Object.keys(JOB_ROLES[category.id as keyof typeof JOB_ROLES] || {}),
+    [category.id]
+  );
   
   return (
     <div className="group bg-white p-6 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:shadow-xl transition-all cursor-pointer">
-      {/* Category Header */}
       <div className="flex items-start gap-4 mb-4">
         <div className="w-14 h-14 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all">
           {ICONS[category.icon as keyof typeof ICONS]}
@@ -268,12 +303,10 @@ const CategoryCard = memo<CategoryCardProps>(({ category, onCategoryClick, onSub
         </div>
       </div>
       
-      {/* Description */}
       <p className="text-sm text-slate-600 mb-4 leading-relaxed">
         {category.description}
       </p>
       
-      {/* Subcategories */}
       {subcategories.length > 0 && (
         <div className="mb-4">
           <div className="text-xs font-semibold text-slate-500 uppercase mb-2">Specializations:</div>
@@ -296,7 +329,6 @@ const CategoryCard = memo<CategoryCardProps>(({ category, onCategoryClick, onSub
         </div>
       )}
       
-      {/* Explore Button */}
       <button
         onClick={(e) => onCategoryClick(e, category.id)}
         className="w-full flex items-center justify-center gap-1 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors"
