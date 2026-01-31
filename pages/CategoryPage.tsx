@@ -22,6 +22,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
 
   const experienceLevels = [
     { value: 'all', label: 'All Levels' },
+    { value: 'Internship', label: 'Internship' },
     { value: 'Entry Level', label: 'Entry Level' },
     { value: 'Mid Level', label: 'Mid Level' },
     { value: 'Senior Level', label: 'Senior Level' },
