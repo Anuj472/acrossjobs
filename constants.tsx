@@ -293,5 +293,6 @@ export const EXPERIENCE_LEVELS = [
   { value: 'ENTRY', label: 'Entry Level' },
   { value: 'MID', label: 'Mid Level' },
   { value: 'SENIOR', label: 'Senior Level' },
-  { value: 'LEAD', label: 'Lead / Executive' }
+  { value: 'LEAD', label: 'Lead' },
+  { value: 'EXECUTIVE', label: 'Executive' }
 ];
