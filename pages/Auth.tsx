@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Mail, Lock, Chrome, Github, Linkedin, ArrowLeft } from 'lucide-react';
+import { Chrome, Github, Linkedin, ArrowLeft } from 'lucide-react';
 
 interface AuthProps {
   onNavigate: (page: string) => void;
@@ -10,7 +10,6 @@ interface AuthProps {
 const Auth: React.FC<AuthProps> = ({ onNavigate, onAuthSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [mode, setMode] = useState<'signin' | 'signup'>('signup');
 
   // Check if user is already logged in
   useEffect(() => {
@@ -70,12 +69,10 @@ const Auth: React.FC<AuthProps> = ({ onNavigate, onAuthSuccess }) => {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-black text-slate-900 mb-2">
-              {mode === 'signup' ? 'Create Account' : 'Welcome Back'}
+              Welcome to AcrossJobs
             </h1>
             <p className="text-slate-600">
-              {mode === 'signup' 
-                ? 'Sign up to access 5,000+ job listings' 
-                : 'Sign in to continue your job search'}
+              Sign in to access 5,000+ job listings
             </p>
           </div>
 
@@ -87,7 +84,7 @@ const Auth: React.FC<AuthProps> = ({ onNavigate, onAuthSuccess }) => {
           )}
 
           {/* Social Login Buttons */}
-          <div className="space-y-3 mb-6">
+          <div className="space-y-3">
             <button
               onClick={() => handleSocialLogin('google')}
               disabled={loading}
@@ -116,71 +113,8 @@ const Auth: React.FC<AuthProps> = ({ onNavigate, onAuthSuccess }) => {
             </button>
           </div>
 
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-slate-500 font-medium">Or continue with email</span>
-            </div>
-          </div>
-
-          {/* Email/Password Form (Optional - for future) */}
-          <div className="space-y-4 opacity-50 pointer-events-none">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="email"
-                  placeholder="you@example.com"
-                  className="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
-                  disabled
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
-                  disabled
-                />
-              </div>
-            </div>
-
-            <button
-              disabled
-              className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg"
-            >
-              {mode === 'signup' ? 'Create Account' : 'Sign In'}
-            </button>
-          </div>
-
-          {/* Toggle Mode */}
-          <div className="mt-6 text-center">
-            <p className="text-slate-600">
-              {mode === 'signup' ? 'Already have an account?' : "Don't have an account?"}
-              <button
-                onClick={() => setMode(mode === 'signup' ? 'signin' : 'signup')}
-                className="ml-2 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors"
-              >
-                {mode === 'signup' ? 'Sign In' : 'Sign Up'}
-              </button>
-            </p>
-          </div>
-
           {/* Terms */}
-          <p className="mt-6 text-xs text-slate-500 text-center">
+          <p className="mt-8 text-xs text-slate-500 text-center">
             By continuing, you agree to our{' '}
             <button onClick={() => onNavigate('page:terms')} className="underline hover:text-slate-700">Terms of Service</button>
             {' '}and{' '}
