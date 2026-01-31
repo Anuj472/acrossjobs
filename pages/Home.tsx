@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ICONS, JOB_CATEGORIES } from '../constants';
+import React, { useState, useMemo } from 'react';
+import { ICONS, JOB_CATEGORIES, JOB_ROLES } from '../constants';
 import { JobWithCompany } from '../types';
 import JobCard from '../components/jobs/JobCard';
 
@@ -11,6 +11,17 @@ interface HomeProps {
 const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs }) => {
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('');
+
+  // Extract unique locations from all featured jobs for dropdown
+  const availableLocations = useMemo(() => {
+    const locations = new Set<string>();
+    featuredJobs.forEach(job => {
+      if (job.location_city && job.location_country) {
+        locations.add(`${job.location_city}, ${job.location_country}`);
+      }
+    });
+    return Array.from(locations).sort();
+  }, [featuredJobs]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +36,13 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs }) => {
     onNavigate(`category:${categoryId}`);
   };
 
+  const handleSubcategoryClick = (e: React.MouseEvent, categoryId: string, subcategory: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    console.log('Subcategory clicked:', categoryId, subcategory);
+    onNavigate(`category:${categoryId}?subcategory=${encodeURIComponent(subcategory)}`);
+  };
+
   const handleViewAllClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -35,18 +53,18 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs }) => {
   return (
     <div className="flex flex-col gap-20 pb-20">
       {/* Hero Section */}
-      <section className="relative py-20 px-4 bg-slate-900 overflow-hidden">
+      <section className="relative py-16 px-4 bg-slate-900 overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 -left-10 w-72 h-72 bg-indigo-500 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 -right-10 w-96 h-96 bg-purple-500 rounded-full blur-3xl"></div>
         </div>
         
         <div className="max-w-4xl mx-auto relative z-10 text-center">
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight">
-            The <span className="text-indigo-400">Referral-First</span> Way to Land Your Next Role
+          <h1 className="text-3xl md:text-5xl font-bold text-white mb-5 leading-tight">
+            Discover Your Next <span className="text-indigo-400">Career Opportunity</span>
           </h1>
-          <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">
-            Stop sending resumes into the void. Find top jobs and connect directly with hiring managers on LinkedIn via <span className="text-white font-bold">AcrossJob</span>.
+          <p className="text-lg text-slate-300 mb-8 max-w-2xl mx-auto">
+            Browse thousands of job listings from top companies across multiple industries. Find the perfect role that matches your skills and aspirations.
           </p>
 
           <form 
@@ -65,13 +83,16 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs }) => {
             </div>
             <div className="flex-1 flex items-center px-4 py-2">
               <span className="text-slate-400 mr-2">{ICONS.mapPin}</span>
-              <input 
-                type="text" 
-                placeholder="City or remote" 
+              <select
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full outline-none text-slate-900 py-2"
-              />
+                className="w-full outline-none text-slate-900 py-2 bg-white cursor-pointer"
+              >
+                <option value="">All Locations</option>
+                {availableLocations.map((loc, idx) => (
+                  <option key={idx} value={loc}>{loc}</option>
+                ))}
+              </select>
             </div>
             <button 
               type="submit"
@@ -81,45 +102,78 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs }) => {
             </button>
           </form>
           
-          <div className="mt-8 flex flex-wrap justify-center gap-6 text-slate-400 text-sm">
+          <div className="mt-6 flex flex-wrap justify-center gap-6 text-slate-400 text-sm">
             <span>Popular: Frontend, Product Manager, DevOps, ML Engineer</span>
           </div>
         </div>
       </section>
 
-      {/* Categories Section */}
+      {/* Categories Section with Subcategories */}
       <section className="max-w-7xl mx-auto px-4 w-full">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-slate-900 mb-4">Browse by Industry</h2>
           <p className="text-slate-600">Explore high-impact roles across our primary sectors.</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {JOB_CATEGORIES.map((cat) => (
-            <div 
-              key={cat.id}
-              onClick={(e) => handleCategoryClick(e, cat.id)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onNavigate(`category:${cat.id}`);
-                }
-              }}
-              className="group bg-white p-8 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:shadow-xl transition-all cursor-pointer text-center"
-            >
-              <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 mb-6 mx-auto group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                {ICONS[cat.icon as keyof typeof ICONS]}
+          {JOB_CATEGORIES.map((cat) => {
+            const subcategories = Object.keys(JOB_ROLES[cat.id as keyof typeof JOB_ROLES] || {});
+            
+            return (
+              <div 
+                key={cat.id}
+                className="group bg-white p-6 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:shadow-xl transition-all cursor-pointer"
+              >
+                {/* Category Header */}
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-14 h-14 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 flex-shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                    {ICONS[cat.icon as keyof typeof ICONS]}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-slate-900 mb-1 group-hover:text-indigo-600 transition-colors">
+                      {cat.label}
+                    </h3>
+                    <p className="text-xs text-slate-500">Browse roles</p>
+                  </div>
+                </div>
+                
+                {/* Description */}
+                <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+                  {cat.description}
+                </p>
+                
+                {/* Subcategories */}
+                {subcategories.length > 0 && (
+                  <div className="mb-4">
+                    <div className="text-xs font-semibold text-slate-500 uppercase mb-2">Specializations:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {subcategories.slice(0, 3).map((subcat, idx) => (
+                        <button
+                          key={idx}
+                          onClick={(e) => handleSubcategoryClick(e, cat.id, subcat)}
+                          className="inline-flex items-center px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium hover:bg-indigo-100 hover:text-indigo-700 transition-all cursor-pointer"
+                        >
+                          {subcat}
+                        </button>
+                      ))}
+                      {subcategories.length > 3 && (
+                        <span className="inline-flex items-center px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-semibold">
+                          +{subcategories.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Explore Button */}
+                <button
+                  onClick={(e) => handleCategoryClick(e, cat.id)}
+                  className="w-full flex items-center justify-center gap-1 text-indigo-600 font-semibold hover:text-indigo-700 transition-colors"
+                >
+                  Explore All Jobs {ICONS.chevronRight}
+                </button>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">{cat.label}</h3>
-              <p className="text-slate-600 mb-6 text-sm leading-relaxed">
-                {cat.description}
-              </p>
-              <div className="flex items-center justify-center gap-1 text-indigo-600 font-semibold">
-                Explore Jobs {ICONS.chevronRight}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
