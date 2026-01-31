@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Briefcase, Globe, Zap, TrendingUp, Users, Shield, Bell, Eye, Code, TrendingUp as Chart, DollarSign, Scale, FlaskConical, UserCircle, Megaphone } from 'lucide-react';
 import { JOB_ROLES } from '../constants';
+import { storage } from '../db/storage';
+import { JobWithCompany } from '../types';
 
 interface LandingProps {
   onNavigate: (page: string) => void;
@@ -8,13 +10,47 @@ interface LandingProps {
 }
 
 const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
+  const [jobCounts, setJobCounts] = useState<Record<string, number>>({});
+  const [totalJobs, setTotalJobs] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch real job counts on mount
+  useEffect(() => {
+    const fetchJobCounts = async () => {
+      try {
+        const allJobs = await storage.getJobsWithCompanies();
+        setTotalJobs(allJobs.length);
+        
+        // Count jobs by category
+        const counts: Record<string, number> = {};
+        allJobs.forEach(job => {
+          counts[job.category] = (counts[job.category] || 0) + 1;
+        });
+        
+        setJobCounts(counts);
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch job counts:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchJobCounts();
+  }, []);
+
+  const formatCount = (count: number | undefined): string => {
+    if (!count || loading) return '...';
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K+`;
+    return `${count}+`;
+  };
+
   const categories = [
     {
       id: 'it',
       name: 'IT & Software',
       icon: Code,
       description: 'Software development, infrastructure, and data engineering roles.',
-      count: '3,200+',
+      count: formatCount(jobCounts['it']),
       color: 'indigo',
       subcategories: Object.keys(JOB_ROLES.it || {})
     },
@@ -23,7 +59,7 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
       name: 'Management',
       icon: UserCircle,
       description: 'Executive and managerial positions driving business growth.',
-      count: '250+',
+      count: formatCount(jobCounts['management']),
       color: 'purple',
       subcategories: Object.keys(JOB_ROLES.management || {})
     },
@@ -32,7 +68,7 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
       name: 'Sales',
       icon: TrendingUp,
       description: 'Strategic roles focused on revenue generation and client relations.',
-      count: '800+',
+      count: formatCount(jobCounts['sales']),
       color: 'pink',
       subcategories: Object.keys(JOB_ROLES.sales || {})
     },
@@ -41,7 +77,7 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
       name: 'Marketing',
       icon: Megaphone,
       description: 'Creative and analytical roles in brand, growth, and communications.',
-      count: '450+',
+      count: formatCount(jobCounts['marketing']),
       color: 'orange',
       subcategories: Object.keys(JOB_ROLES.marketing || {})
     },
@@ -50,7 +86,7 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
       name: 'Finance',
       icon: DollarSign,
       description: 'Financial planning, analysis, and accounting roles.',
-      count: '300+',
+      count: formatCount(jobCounts['finance']),
       color: 'blue',
       subcategories: Object.keys(JOB_ROLES.finance || {})
     },
@@ -59,7 +95,7 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
       name: 'Legal',
       icon: Scale,
       description: 'Legal counsel, compliance, and regulatory affairs positions.',
-      count: '150+',
+      count: formatCount(jobCounts['legal']),
       color: 'green',
       subcategories: Object.keys(JOB_ROLES.legal || {})
     },
@@ -68,7 +104,7 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
       name: 'Research & Development',
       icon: FlaskConical,
       description: 'Focus on innovation, hardware, and science.',
-      count: '200+',
+      count: formatCount(jobCounts['research-development']),
       color: 'teal',
       subcategories: Object.keys(JOB_ROLES['research-development'] || {})
     },
@@ -81,6 +117,9 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
     onNavigate(`category:${categoryId}?subcategory=${encodeURIComponent(subcategory)}`);
   };
 
+  const totalJobsDisplay = loading ? '...' : (totalJobs >= 1000 ? `${(totalJobs / 1000).toFixed(1)}K+` : `${totalJobs}+`);
+  const companyCount = loading ? '...' : '99+';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
       {/* Hero Section */}
@@ -92,7 +131,7 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-4 py-2 rounded-full text-sm font-semibold mb-8">
               <Zap className="w-4 h-4" />
-              <span>5,000+ Jobs • 100% Free • No Signup Required</span>
+              <span>{totalJobsDisplay} Jobs • 100% Free • No Signup Required</span>
             </div>
             
             {/* Main Heading */}
@@ -105,7 +144,7 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
             
             {/* Tagline */}
             <p className="text-xl md:text-2xl text-slate-600 mb-12 leading-relaxed">
-              Browse <span className="font-bold text-slate-900">5,000+ job listings</span> from top companies worldwide.
+              Browse <span className="font-bold text-slate-900">{totalJobsDisplay} job listings</span> from top companies worldwide.
               <span className="block mt-2 font-semibold text-slate-800">IT, Sales, Marketing, Finance, Legal, Management, R&D & More.</span>
             </p>
             
@@ -138,11 +177,11 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
             {/* Stats */}
             <div className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
               <div>
-                <div className="text-4xl font-black text-indigo-600">5K+</div>
+                <div className="text-4xl font-black text-indigo-600">{totalJobsDisplay}</div>
                 <div className="text-sm text-slate-600 font-medium">Active Jobs</div>
               </div>
               <div>
-                <div className="text-4xl font-black text-indigo-600">100+</div>
+                <div className="text-4xl font-black text-indigo-600">{companyCount}</div>
                 <div className="text-sm text-slate-600 font-medium">Top Companies</div>
               </div>
               <div>
@@ -317,7 +356,7 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-3">Browse Jobs</h3>
               <p className="text-slate-600">
-                Instantly access 5,000+ job listings. No signup required, no barriers.
+                Instantly access {totalJobsDisplay} job listings. No signup required, no barriers.
               </p>
             </div>
             
