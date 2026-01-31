@@ -10,13 +10,24 @@ interface CategoryPageProps {
 }
 
 const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, allJobs }) => {
-  // Parsing potentially dirty categoryKey (e.g. "all?q=dev")
+  // Parsing potentially dirty categoryKey (e.g. "all?q=dev" or "it?subcategory=Software Development")
   const actualCategory = categoryKey.split('?')[0];
   const currentCategory = JOB_CATEGORIES.find(c => c.id === actualCategory);
   
   const [search, setSearch] = useState('');
   const [location, setLocation] = useState('');
   const [jobType, setJobType] = useState<string>('all');
+  const [experienceLevel, setExperienceLevel] = useState<string>('all');
+  const [subcategoryFilter, setSubcategoryFilter] = useState<string>('');
+
+  const experienceLevels = [
+    { value: 'all', label: 'All Levels' },
+    { value: 'Entry Level', label: 'Entry Level' },
+    { value: 'Mid Level', label: 'Mid Level' },
+    { value: 'Senior Level', label: 'Senior Level' },
+    { value: 'Lead', label: 'Lead' },
+    { value: 'Executive', label: 'Executive' },
+  ];
 
   // CRITICAL FIX: Reset filters when category changes
   useEffect(() => {
@@ -24,6 +35,8 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
     setSearch('');
     setLocation('');
     setJobType('all');
+    setExperienceLevel('all');
+    setSubcategoryFilter('');
   }, [actualCategory]);
 
   // Handle initial search from URL
@@ -32,6 +45,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
       const params = new URLSearchParams(categoryKey.split('?')[1]);
       setSearch(params.get('q') || '');
       setLocation(params.get('l') || '');
+      setSubcategoryFilter(params.get('subcategory') || '');
     }
   }, [categoryKey]);
 
@@ -42,14 +56,20 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
     console.log('🔍 Filtering jobs:', {
       totalJobs: allJobs.length,
       category: actualCategory,
+      subcategory: subcategoryFilter,
       search,
       location,
-      jobType
+      jobType,
+      experienceLevel
     });
 
     const filtered = allJobs.filter(job => {
       // Category check
       const matchesCategory = actualCategory === 'all' || job.category === actualCategory;
+      
+      // Subcategory check (if provided)
+      const matchesSubcategory = !subcategoryFilter || 
+        job.title.toLowerCase().includes(subcategoryFilter.toLowerCase());
       
       // Keyword check (Title or Company Name)
       const matchesSearch = !search || 
@@ -64,12 +84,15 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
       // Type check
       const matchesType = jobType === 'all' || job.job_type === jobType;
       
-      return matchesCategory && matchesSearch && matchesLocation && matchesType;
+      // Experience level check
+      const matchesExperience = experienceLevel === 'all' || job.experience_level === experienceLevel;
+      
+      return matchesCategory && matchesSubcategory && matchesSearch && matchesLocation && matchesType && matchesExperience;
     });
 
     console.log('✅ Filtered result:', filtered.length, 'jobs');
     return filtered;
-  }, [allJobs, actualCategory, search, location, jobType]);
+  }, [allJobs, actualCategory, subcategoryFilter, search, location, jobType, experienceLevel]);
 
   const handleBreadcrumbClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -83,6 +106,8 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
     setSearch('');
     setLocation('');
     setJobType('all');
+    setExperienceLevel('all');
+    setSubcategoryFilter('');
   };
 
   return (
@@ -103,9 +128,18 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
               <span className="text-slate-300">/</span>
               <span className="font-medium text-slate-900 uppercase">{actualCategory === 'it' ? 'IT' : actualCategory.replace('-', ' ')}</span>
             </li>
+            {subcategoryFilter && (
+              <li className="flex items-center space-x-2">
+                <span className="text-slate-300">/</span>
+                <span className="font-medium text-indigo-600">{subcategoryFilter}</span>
+              </li>
+            )}
           </ol>
         </nav>
-        <h1 className="text-4xl font-extrabold text-slate-900 mb-4">{displayTitle}</h1>
+        <h1 className="text-4xl font-extrabold text-slate-900 mb-4">
+          {displayTitle}
+          {subcategoryFilter && <span className="text-indigo-600"> • {subcategoryFilter}</span>}
+        </h1>
         <p className="text-lg text-slate-600">Showing {filteredJobs.length} active opportunities</p>
       </div>
 
@@ -149,6 +183,19 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
                   <option value="all">All Types</option>
                   {REMOTE_STATUSES.map(r => (
                     <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Experience Level</label>
+                <select 
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  value={experienceLevel}
+                  onChange={(e) => setExperienceLevel(e.target.value)}
+                >
+                  {experienceLevels.map(level => (
+                    <option key={level.value} value={level.value}>{level.label}</option>
                   ))}
                 </select>
               </div>

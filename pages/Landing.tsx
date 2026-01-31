@@ -74,6 +74,13 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
     },
   ];
 
+  const handleSubcategoryClick = (e: React.MouseEvent, categoryId: string, subcategory: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    console.log('Subcategory clicked:', categoryId, subcategory);
+    onNavigate(`category:${categoryId}?subcategory=${encodeURIComponent(subcategory)}`);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
       {/* Hero Section */}
@@ -194,7 +201,7 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
         </div>
       </section>
 
-      {/* Industries Section with Subcategories */}
+      {/* Industries Section with Clickable Subcategories */}
       <section className="py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
@@ -230,17 +237,18 @@ const Landing: React.FC<LandingProps> = ({ onNavigate, onSignUpClick }) => {
                     {category.description}
                   </p>
                   
-                  {/* Subcategories */}
+                  {/* Clickable Subcategories */}
                   <div className="mb-4">
                     <div className="text-xs font-semibold text-slate-500 uppercase mb-2">Specializations:</div>
                     <div className="flex flex-wrap gap-2">
                       {category.subcategories.slice(0, 4).map((subcat, idx) => (
-                        <span
+                        <button
                           key={idx}
-                          className="inline-flex items-center px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium"
+                          onClick={(e) => handleSubcategoryClick(e, category.id, subcat)}
+                          className="inline-flex items-center px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium hover:bg-indigo-100 hover:text-indigo-700 transition-all cursor-pointer"
                         >
                           {subcat}
-                        </span>
+                        </button>
                       ))}
                       {category.subcategories.length > 4 && (
                         <span className="inline-flex items-center px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-semibold">

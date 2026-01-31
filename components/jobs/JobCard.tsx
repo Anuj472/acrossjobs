@@ -87,10 +87,18 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
             {ICONS.mapPin}
             <span>{job.location_city}, {job.location_country}</span>
           </div>
-          <div className="flex items-center gap-1">
-            {ICONS.briefcase}
-            <span>{formatSalary(job.salary_range)}</span>
-          </div>
+          {job.salary_range && (
+            <div className="flex items-center gap-1">
+              {ICONS.dollarSign}
+              <span>{formatSalary(job.salary_range)}</span>
+            </div>
+          )}
+          {job.experience_level && (
+            <div className="flex items-center gap-1">
+              {ICONS.briefcase}
+              <span>{job.experience_level}</span>
+            </div>
+          )}
         </div>
       </div>
 

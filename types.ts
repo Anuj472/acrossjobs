@@ -1,5 +1,6 @@
 export type JobType = 'Remote' | 'On-site' | 'Hybrid' | 'Freelance' | 'Contract';
 export type JobCategoryType = 'management' | 'it' | 'research-development' | 'sales' | 'marketing' | 'finance' | 'legal';
+export type ExperienceLevelType = 'Entry Level' | 'Mid Level' | 'Senior Level' | 'Lead' | 'Executive' | null;
 
 export interface Company {
   id: string;
@@ -21,6 +22,7 @@ export interface Job {
   location_country: string | null;
   salary_range: string | null;
   job_type: JobType;
+  experience_level: ExperienceLevelType;
   apply_link: string;
   description: string | null;
   requirements: string | null;
