@@ -4,6 +4,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import Landing from './pages/Landing';
 import Auth from './pages/Auth';
+import AuthCallback from './pages/AuthCallback';
 import Home from './pages/Home';
 import CategoryPage from './pages/CategoryPage';
 import JobDetailPage from './pages/JobDetailPage';
@@ -22,6 +23,7 @@ const parsePath = (path: string): string => {
   const cleanPath = path.split('?')[0].replace(/^\/+|\/+$/g, '');
   
   if (!cleanPath || cleanPath === '') return 'landing';
+  if (cleanPath === 'auth/callback') return 'auth:callback';
   if (cleanPath === 'auth' || cleanPath === 'login' || cleanPath === 'signup') return 'auth';
   if (cleanPath === 'admin') return 'admin';
   
@@ -129,6 +131,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
       
       let newPath = '/';
       if (page === 'landing') newPath = '/';
+      else if (page === 'auth:callback') newPath = '/auth/callback';
       else if (page === 'auth') newPath = '/auth';
       else if (page === 'home') newPath = '/jobs';
       else if (page === 'admin') newPath = '/admin';
@@ -272,6 +275,11 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
       );
     }
     
+    // OAuth Callback (public)
+    if (currentPage === 'auth:callback') {
+      return <AuthCallback onAuthSuccess={() => navigate('home')} />;
+    }
+    
     // Landing page (public)
     if (currentPage === 'landing') {
       return <Landing onNavigate={navigate} onSignUpClick={() => navigate('auth')} />;
@@ -342,7 +350,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
   };
 
   // Show minimal navbar for landing and auth pages
-  const showMinimalNav = currentPage === 'landing' || currentPage === 'auth';
+  const showMinimalNav = currentPage === 'landing' || currentPage === 'auth' || currentPage === 'auth:callback';
 
   return (
     <div className="flex flex-col min-h-screen">
