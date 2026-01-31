@@ -1,9 +1,31 @@
 import { supabase } from '../lib/supabase';
 import { Job, Company, JobWithCompany } from '../types';
 
+interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+}
+
 export const storage = {
-  // Get jobs with company details (with optional limit for lazy loading)
-  async getJobsWithCompanies(limit?: number): Promise<JobWithCompany[]> {
+  /**
+   * Get jobs with pagination support
+   * CRITICAL: Supabase has 1000 row default limit!
+   * Use range() to access all 6406+ jobs
+   */
+  async getJobsWithCompanies(
+    options?: {
+      limit?: number;
+      offset?: number;
+      category?: string;
+      location?: string;
+      jobType?: string;
+      experienceLevel?: string;
+      search?: string;
+    }
+  ): Promise<JobWithCompany[]> {
     try {
       let query = supabase
         .from('jobs')
@@ -14,12 +36,42 @@ export const storage = {
         .eq('is_active', true)
         .order('created_at', { ascending: false });
       
-      // Apply limit if provided (for lazy loading)
-      if (limit) {
-        query = query.limit(limit);
-        console.log(`⚡ Fast loading first ${limit} jobs...`);
+      // Apply filters
+      if (options?.category) {
+        query = query.eq('category', options.category);
+      }
+      
+      if (options?.jobType) {
+        query = query.eq('job_type', options.jobType);
+      }
+      
+      if (options?.experienceLevel) {
+        query = query.eq('experience_level', options.experienceLevel);
+      }
+      
+      if (options?.location) {
+        query = query.or(`location_city.ilike.%${options.location}%,location_country.ilike.%${options.location}%`);
+      }
+      
+      if (options?.search) {
+        query = query.or(`title.ilike.%${options.search}%,description.ilike.%${options.search}%`);
+      }
+      
+      // Apply pagination using range() instead of limit()
+      // This allows us to bypass the 1000 row limit
+      if (options?.limit !== undefined && options?.offset !== undefined) {
+        const from = options.offset;
+        const to = options.offset + options.limit - 1;
+        query = query.range(from, to);
+        console.log(`📄 Loading jobs ${from}-${to}...`);
+      } else if (options?.limit) {
+        // Just limit, no offset
+        query = query.range(0, options.limit - 1);
+        console.log(`⚡ Fast loading first ${options.limit} jobs...`);
       } else {
-        console.log('📥 Loading ALL jobs...');
+        // NO LIMIT - Load ALL jobs using multiple queries if needed
+        console.log('📥 Loading ALL jobs (may require multiple queries)...');
+        return await this.getAllJobsUnlimited();
       }
       
       const { data, error } = await query;
@@ -41,6 +93,133 @@ export const storage = {
     } catch (error) {
       console.error('Error fetching jobs with companies:', error);
       return [];
+    }
+  },
+
+  /**
+   * Load ALL jobs without limit
+   * Handles Supabase 1000 row limit by fetching in batches
+   */
+  async getAllJobsUnlimited(): Promise<JobWithCompany[]> {
+    const BATCH_SIZE = 1000;
+    let allJobs: JobWithCompany[] = [];
+    let hasMore = true;
+    let offset = 0;
+
+    while (hasMore) {
+      try {
+        const { data, error } = await supabase
+          .from('jobs')
+          .select(`
+            *,
+            company:companies(*)
+          `)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + BATCH_SIZE - 1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const jobs = data.map((item: any) => ({
+            ...item,
+            company: item.company || {}
+          })) as JobWithCompany[];
+          
+          allJobs = [...allJobs, ...jobs];
+          console.log(`📦 Loaded batch: ${allJobs.length} total jobs so far...`);
+          
+          // If we got less than BATCH_SIZE, we've reached the end
+          if (data.length < BATCH_SIZE) {
+            hasMore = false;
+          } else {
+            offset += BATCH_SIZE;
+          }
+        } else {
+          hasMore = false;
+        }
+      } catch (error) {
+        console.error('Error in batch fetch:', error);
+        hasMore = false;
+      }
+    }
+
+    console.log(`✅ Loaded ALL ${allJobs.length} jobs!`);
+    return allJobs;
+  },
+
+  /**
+   * Get paginated jobs with total count
+   * Perfect for pagination UI
+   */
+  async getJobsPaginated(
+    page: number = 1,
+    perPage: number = 20,
+    filters?: {
+      category?: string;
+      location?: string;
+      jobType?: string;
+      experienceLevel?: string;
+      search?: string;
+    }
+  ): Promise<PaginatedResult<JobWithCompany>> {
+    try {
+      let query = supabase
+        .from('jobs')
+        .select(`
+          *,
+          company:companies(*)
+        `, { count: 'exact' })
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      
+      // Apply filters
+      if (filters?.category) query = query.eq('category', filters.category);
+      if (filters?.jobType) query = query.eq('job_type', filters.jobType);
+      if (filters?.experienceLevel) query = query.eq('experience_level', filters.experienceLevel);
+      if (filters?.location) {
+        query = query.or(`location_city.ilike.%${filters.location}%,location_country.ilike.%${filters.location}%`);
+      }
+      if (filters?.search) {
+        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+      }
+      
+      // Calculate range
+      const from = (page - 1) * perPage;
+      const to = from + perPage - 1;
+      
+      query = query.range(from, to);
+      
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      const jobs = (data || []).map((item: any) => ({
+        ...item,
+        company: item.company || {}
+      })) as JobWithCompany[];
+
+      const total = count || 0;
+      const totalPages = Math.ceil(total / perPage);
+
+      console.log(`📄 Page ${page}/${totalPages} - Showing ${jobs.length} of ${total} jobs`);
+
+      return {
+        data: jobs,
+        total,
+        page,
+        perPage,
+        totalPages
+      };
+    } catch (error) {
+      console.error('Error fetching paginated jobs:', error);
+      return {
+        data: [],
+        total: 0,
+        page,
+        perPage,
+        totalPages: 0
+      };
     }
   },
 
@@ -69,35 +248,49 @@ export const storage = {
     }
   },
 
-  // Get jobs by category
+  // Get jobs by category (with unlimited support)
   async getJobsByCategory(category: string, limit?: number): Promise<JobWithCompany[]> {
+    return this.getJobsWithCompanies({
+      category,
+      limit: limit || undefined
+    });
+  },
+
+  // Get total job count
+  async getTotalJobCount(): Promise<number> {
     try {
-      let query = supabase
+      const { count, error } = await supabase
         .from('jobs')
-        .select(`
-          *,
-          company:companies(*)
-        `)
-        .eq('category', category)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-      
-      if (limit) {
-        query = query.limit(limit);
-      }
-      
-      const { data, error } = await query;
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
 
       if (error) throw error;
-      if (!data) return [];
-
-      return data.map((item: any) => ({
-        ...item,
-        company: item.company || {}
-      })) as JobWithCompany[];
+      return count || 0;
     } catch (error) {
-      console.error('Error fetching jobs by category:', error);
-      return [];
+      console.error('Error getting job count:', error);
+      return 0;
+    }
+  },
+
+  // Get job counts by category
+  async getJobCountsByCategory(): Promise<Record<string, number>> {
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('category')
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      const counts: Record<string, number> = {};
+      (data || []).forEach((job: any) => {
+        counts[job.category] = (counts[job.category] || 0) + 1;
+      });
+
+      return counts;
+    } catch (error) {
+      console.error('Error getting category counts:', error);
+      return {};
     }
   },
 
