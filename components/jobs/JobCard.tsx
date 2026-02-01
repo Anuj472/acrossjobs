@@ -29,7 +29,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
   const renderLogo = () => {
     if (!job.company.logo_url || imgError) {
       return (
-        <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xl border border-indigo-200 uppercase">
+        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg sm:text-xl border border-indigo-200 uppercase flex-shrink-0">
           {job.company.name.charAt(0)}
         </div>
       );
@@ -39,7 +39,8 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
         src={job.company.logo_url} 
         alt={job.company.name} 
         onError={() => setImgError(true)}
-        className="w-12 h-12 rounded-lg object-contain bg-white p-1 border border-slate-100"
+        loading="lazy"
+        className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg object-contain bg-white p-1 border border-slate-100 flex-shrink-0"
       />
     );
   };
@@ -56,15 +57,16 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
         }
       }}
       className={`bg-white border border-slate-200 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group overflow-hidden ${
-        isGrid ? 'flex flex-col p-6' : 'flex flex-col sm:flex-row items-start sm:items-center p-5 gap-5'
+        isGrid ? 'flex flex-col p-4 sm:p-6' : 'flex flex-col sm:flex-row items-start sm:items-center p-4 sm:p-5 gap-3 sm:gap-5'
       }`}
     >
-      <div className={`flex-shrink-0 ${isGrid ? 'mb-4' : ''}`}>
+      <div className={`flex-shrink-0 ${isGrid ? 'mb-3 sm:mb-4' : ''}`}>
         {renderLogo()}
       </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
+      <div className="flex-1 min-w-0 w-full">
+        {/* Tags row - mobile optimized */}
+        <div className="flex flex-wrap items-center gap-2 mb-2">
           <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-wider">
             {job.job_type}
           </span>
@@ -75,35 +77,51 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
             {mounted ? formatRelativeDate(job.created_at) : formatAbsoluteDate(job.created_at)}
           </span>
         </div>
-        <h3 className="text-lg font-bold text-slate-900 truncate mb-1 group-hover:text-indigo-600 transition-colors">
+
+        {/* Title - Multi-line on mobile, single line on desktop */}
+        <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-2 sm:line-clamp-1 leading-snug">
           {job.title}
         </h3>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
-          <div className="flex items-center gap-1">
-            {ICONS.building}
-            <span className="truncate max-w-[150px]">{job.company.name}</span>
+
+        {/* Job details - Responsive grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-x-3 sm:gap-x-4 gap-y-1.5 sm:gap-y-1 text-sm text-slate-600">
+          {/* Company name */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="flex-shrink-0">{ICONS.building}</span>
+            <span className="truncate">{job.company.name}</span>
           </div>
-          <div className="flex items-center gap-1">
-            {ICONS.mapPin}
-            <span>{job.location_city}, {job.location_country}</span>
+
+          {/* Location */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="flex-shrink-0">{ICONS.mapPin}</span>
+            <span className="truncate">{job.location_city}, {job.location_country}</span>
           </div>
+
+          {/* Salary - only show on larger screens if exists */}
           {job.salary_range && (
-            <div className="flex items-center gap-1">
-              {ICONS.dollarSign}
-              <span>{formatSalary(job.salary_range)}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="flex-shrink-0">{ICONS.dollarSign}</span>
+              <span className="truncate">{formatSalary(job.salary_range)}</span>
             </div>
           )}
+
+          {/* Experience level */}
           {job.experience_level && (
-            <div className="flex items-center gap-1">
-              {ICONS.briefcase}
-              <span>{job.experience_level}</span>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="flex-shrink-0">{ICONS.briefcase}</span>
+              <span className="truncate">{job.experience_level}</span>
             </div>
           )}
         </div>
       </div>
 
-      <div className={`${isGrid ? 'mt-6' : 'sm:ml-auto'} flex-shrink-0`}>
-        <div className="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-indigo-600 bg-white border border-indigo-200 rounded-lg group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all text-center">
+      {/* CTA Button - Full width on mobile, auto on desktop */}
+      <div className={`${
+        isGrid 
+          ? 'mt-4 sm:mt-6 w-full' 
+          : 'mt-3 sm:mt-0 sm:ml-auto w-full sm:w-auto'
+      } flex-shrink-0`}>
+        <div className="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-indigo-600 bg-white border border-indigo-200 rounded-lg group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all text-center whitespace-nowrap">
           View Details
         </div>
       </div>
@@ -111,4 +129,8 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
   );
 };
 
-export default JobCard;
+// Memoize to prevent unnecessary re-renders
+export default React.memo(JobCard, (prevProps, nextProps) => {
+  return prevProps.job.id === nextProps.job.id && 
+         prevProps.variant === nextProps.variant;
+});
