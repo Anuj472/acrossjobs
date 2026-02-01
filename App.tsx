@@ -131,26 +131,26 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // LAZY LOADING with timeout and error handling
+  // OPTIMIZED: Load jobs in chunks with timeout protection
   const fetchInitialJobs = async () => {
     if (jobsWithCompany.length > 0) {
       setLoading(false);
       return;
     }
 
-    const timeoutDuration = 15000; // 15 second timeout
+    const timeoutDuration = 10000; // 10 second timeout
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Request timeout - database took too long to respond')), timeoutDuration);
     });
 
     try {
-      console.log("⚡ Fast loading first 30 jobs...");
+      console.log("⚡ Fast loading first 50 jobs...");
       setLoading(true);
       setError(null);
       
-      // Race between data fetch and timeout
+      // CRITICAL FIX: Use limit parameter to load only initial batch
       const data = await Promise.race([
-        storage.getJobsWithCompanies(30),
+        storage.getJobsWithCompanies({ limit: 50 }),  // Load first 50 jobs only
         timeoutPromise
       ]) as JobWithCompany[];
       
@@ -162,20 +162,11 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
         if (!allJobsLoaded) {
           loadRemainingJobs();
         }
-      }, 500);
+      }, 1000);
     } catch (e: any) {
       console.error("❌ Initial fetch failed:", e);
       const errorMsg = e?.message || 'Failed to load jobs from database';
       setError(errorMsg);
-      
-      // Log detailed error info for debugging
-      console.error('Error details:', {
-        message: e?.message,
-        name: e?.name,
-        stack: e?.stack,
-        supabaseUrl: (window as any).ENV?.VITE_SUPABASE_URL || 'NOT SET',
-        hasSupabaseKey: !!(window as any).ENV?.VITE_SUPABASE_ANON_KEY
-      });
     } finally {
       setLoading(false);
     }
@@ -188,6 +179,7 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
       console.log("🔄 Loading remaining jobs in background...");
       setLoadingMore(true);
       
+      // Load ALL remaining jobs in background
       const allJobs = await storage.getJobsWithCompanies();
       console.log(`✅ Loaded ALL ${allJobs.length} jobs`);
       setJobsWithCompany(allJobs);
