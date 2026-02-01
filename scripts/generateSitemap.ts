@@ -58,11 +58,10 @@ function generateJobSlug(job: Job, companySlug: string): string {
 async function fetchAllJobs(): Promise<{ jobs: Job[]; companies: Map<string, Company> }> {
   console.log('📥 Fetching active jobs from Supabase...');
   
-  // Fetch companies first
+  // Fetch companies first (removed .eq('active', true) - column doesn't exist)
   const { data: companiesData, error: companiesError } = await supabase
     .from('companies')
-    .select('id, slug, updated_at')
-    .eq('active', true);
+    .select('id, slug, updated_at');
   
   if (companiesError) {
     console.error('❌ Error fetching companies:', companiesError);
@@ -74,7 +73,7 @@ async function fetchAllJobs(): Promise<{ jobs: Job[]; companies: Map<string, Com
     companiesMap.set(company.id, company);
   });
   
-  console.log(`   ✅ Found ${companiesMap.size} active companies`);
+  console.log(`   ✅ Found ${companiesMap.size} companies`);
   
   // Fetch all active jobs
   const { data: jobs, error: jobsError } = await supabase
