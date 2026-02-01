@@ -13,32 +13,26 @@ interface PaginatedResult<T> {
  * Helper function to check if search term matches intelligently
  * 
  * Rules:
- * - "intern" matches "intern" and "internship" but NOT "international"
- * - "senior" matches "senior" but NOT "seniority" 
- * - Uses word boundaries + common suffixes
+ * - "intern" matches "intern", "internship", "interns" 
+ * - But NOT "international", "winternationale"
+ * - Checks if search term starts a word (after space, hyphen, comma, or at beginning)
  */
 function matchesSmartSearch(title: string, searchTerm: string): boolean {
   const titleLower = title.toLowerCase();
   const searchLower = searchTerm.toLowerCase().trim();
   
-  // Escape special regex characters
+  // Check if title contains the search term at word boundaries
+  // This regex checks if search term appears:
+  // - At start of string, OR
+  // - After a space, hyphen, comma, or parenthesis
+  // Followed by optional common suffixes (ship, s, ing)
+  
   const escapedSearch = searchLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   
-  // Common job title suffixes to allow
-  const allowedSuffixes = [
-    '',           // exact match: "intern"
-    'ship',       // internship
-    's',          // interns, engineers, managers
-    'ing',        // engineering (though less common in titles)
-  ];
-  
-  // Create regex pattern: \b{search}(ship|s|ing)?\b
-  const suffixPattern = allowedSuffixes.filter(s => s).join('|'); // "ship|s|ing"
-  const pattern = suffixPattern 
-    ? `\\b${escapedSearch}(${suffixPattern})?\\b`
-    : `\\b${escapedSearch}\\b`;
-  
+  // Pattern: (start of string OR space/punctuation) + search + optional suffix + word boundary
+  const pattern = `(^|[\\s,\\-\\(])${escapedSearch}(ship|s|ing)?\\b`;
   const regex = new RegExp(pattern, 'i');
+  
   return regex.test(title);
 }
 
@@ -127,8 +121,9 @@ export const storage = {
       
       // Apply smart search filtering if search term provided
       if (hasSearch && options?.search) {
+        const beforeFilter = jobs.length;
         jobs = jobs.filter(job => matchesSmartSearch(job.title, options.search!));
-        console.log(`✅ Filtered to ${jobs.length} jobs with smart search`);
+        console.log(`🔍 Search "${options.search}": ${beforeFilter} candidates → ${jobs.length} matches`);
       } else {
         console.log(`✅ Loaded ${jobs.length} jobs`);
       }
@@ -231,12 +226,12 @@ export const storage = {
         query = query.or(`location_city.ilike.%${filters.location}%,location_country.ilike.%${filters.location}%`);
       }
       
-      // For search: Fetch ALL matching results (up to 500 for safety)
+      // For search: Fetch more candidates (up to 1000 for thorough search)
       // We'll filter client-side and paginate after
       if (hasSearch && filters?.search) {
         query = query.ilike('title', `%${filters.search}%`);
-        // Fetch up to 500 candidates for search
-        query = query.range(0, 499);
+        // Fetch up to 1000 candidates for search to ensure we get all matches
+        query = query.range(0, 999);
       } else {
         // No search: Normal pagination
         const from = (page - 1) * perPage;
@@ -255,7 +250,10 @@ export const storage = {
 
       // Apply smart search filter if searching
       if (hasSearch && filters?.search) {
+        const candidateCount = jobs.length;
         const allFilteredJobs = jobs.filter(job => matchesSmartSearch(job.title, filters.search!));
+        
+        console.log(`🔍 Search "${filters.search}": ${candidateCount} candidates → ${allFilteredJobs.length} filtered matches`);
         
         // Now paginate the filtered results
         const totalFiltered = allFilteredJobs.length;
@@ -265,7 +263,7 @@ export const storage = {
         
         const totalPages = Math.ceil(totalFiltered / perPage);
         
-        console.log(`📄 Search "${filters.search}": Page ${page}/${totalPages} - ${jobs.length} jobs (${totalFiltered} total matches)`);
+        console.log(`📄 Page ${page}/${totalPages} - ${jobs.length} jobs (${totalFiltered} total matches)`);
         
         return {
           data: jobs,
