@@ -5,7 +5,7 @@
  * Configure your job sources below.
  */
 
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client with service role key for admin access
 const supabase = createClient(
