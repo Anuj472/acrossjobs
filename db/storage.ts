@@ -9,6 +9,20 @@ interface PaginatedResult<T> {
   totalPages: number;
 }
 
+/**
+ * Helper function to check if search term matches as whole word in title
+ * Prevents "intern" from matching "International"
+ */
+function matchesWholeWord(title: string, searchTerm: string): boolean {
+  const titleLower = title.toLowerCase();
+  const searchLower = searchTerm.toLowerCase();
+  
+  // Create word boundary regex
+  // \b matches word boundaries (spaces, hyphens, start/end of string)
+  const regex = new RegExp(`\\b${searchLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+  return regex.test(title);
+}
+
 export const storage = {
   /**
    * Get jobs with pagination support
@@ -53,14 +67,12 @@ export const storage = {
         query = query.or(`location_city.ilike.%${options.location}%,location_country.ilike.%${options.location}%`);
       }
       
-      // FIXED: Use word boundary regex to match whole words only
-      // This prevents "intern" from matching "International"
-      if (options?.search) {
-        // Use PostgreSQL regex with word boundaries
-        // \y matches word boundaries (start/end of word)
-        const searchTerm = options.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape special chars
-        query = query.or(`title.ilike.%${options.search}%,title.~*.\\y${searchTerm}\\y`);
-        // Fallback: if regex fails, use simple ilike for backwards compatibility
+      // For search, get more results and filter client-side
+      // This ensures word boundary matching works correctly
+      const hasSearch = !!options?.search;
+      if (hasSearch) {
+        // Broad search to get candidates
+        query = query.ilike('title', `%${options.search}%`);
       }
       
       // Apply pagination using range() instead of limit()
@@ -89,13 +101,21 @@ export const storage = {
 
       if (!data) return [];
 
-      console.log(`✅ Loaded ${data.length} jobs`);
-      
       // Transform to JobWithCompany format
-      return data.map((item: any) => ({
+      let jobs = data.map((item: any) => ({
         ...item,
         company: item.company || {}
       })) as JobWithCompany[];
+      
+      // Apply client-side word boundary filtering if search term provided
+      if (hasSearch && options?.search) {
+        jobs = jobs.filter(job => matchesWholeWord(job.title, options.search!));
+        console.log(`✅ Filtered to ${jobs.length} jobs with whole-word match`);
+      } else {
+        console.log(`✅ Loaded ${jobs.length} jobs`);
+      }
+      
+      return jobs;
     } catch (error) {
       console.error('Error fetching jobs with companies:', error);
       return [];
@@ -170,6 +190,11 @@ export const storage = {
     }
   ): Promise<PaginatedResult<JobWithCompany>> {
     try {
+      // For search with word boundaries, we need to fetch more results
+      // then filter client-side
+      const hasSearch = !!filters?.search;
+      const fetchPerPage = hasSearch ? perPage * 3 : perPage; // Fetch 3x more if searching
+      
       let query = supabase
         .from('jobs')
         .select(`
@@ -187,15 +212,14 @@ export const storage = {
         query = query.or(`location_city.ilike.%${filters.location}%,location_country.ilike.%${filters.location}%`);
       }
       
-      // FIXED: Use word boundary regex for precise matching
-      if (filters?.search) {
-        const searchTerm = filters.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        query = query.or(`title.ilike.%${filters.search}%,title.~*.\\y${searchTerm}\\y`);
+      // Broad search first
+      if (hasSearch && filters?.search) {
+        query = query.ilike('title', `%${filters.search}%`);
       }
       
       // Calculate range
-      const from = (page - 1) * perPage;
-      const to = from + perPage - 1;
+      const from = (page - 1) * fetchPerPage;
+      const to = from + fetchPerPage - 1;
       
       query = query.range(from, to);
       
@@ -203,10 +227,17 @@ export const storage = {
 
       if (error) throw error;
 
-      const jobs = (data || []).map((item: any) => ({
+      let jobs = (data || []).map((item: any) => ({
         ...item,
         company: item.company || {}
       })) as JobWithCompany[];
+
+      // Apply word boundary filter if searching
+      if (hasSearch && filters?.search) {
+        jobs = jobs.filter(job => matchesWholeWord(job.title, filters.search!));
+        // Trim to requested page size
+        jobs = jobs.slice(0, perPage);
+      }
 
       const total = count || 0;
       const totalPages = Math.ceil(total / perPage);
