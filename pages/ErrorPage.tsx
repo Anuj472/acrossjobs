@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { AlertCircle, RefreshCw, Info, Database, Key, Globe } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface ErrorPageProps {
   error: string;
@@ -7,15 +7,10 @@ interface ErrorPageProps {
 }
 
 const ErrorPage: React.FC<ErrorPageProps> = ({ error, onRetry }) => {
-  const [diagnostics, setDiagnostics] = useState({
-    supabaseUrl: '',
-    hasSupabaseKey: false,
-    environment: '',
-    userAgent: ''
-  });
+  const [showDetails, setShowDetails] = useState(false);
 
-  useEffect(() => {
-    // Gather diagnostic info
+  // Log diagnostic info to console ONLY (not visible to users)
+  React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const getEnvVar = (key: string): string => {
         if (typeof import.meta !== 'undefined' && import.meta.env) {
@@ -27,15 +22,8 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onRetry }) => {
         return '';
       };
 
-      setDiagnostics({
-        supabaseUrl: getEnvVar('VITE_SUPABASE_URL') || getEnvVar('SUPABASE_URL') || 'NOT SET',
-        hasSupabaseKey: !!(getEnvVar('VITE_SUPABASE_ANON_KEY') || getEnvVar('SUPABASE_ANON_KEY')),
-        environment: import.meta.env?.MODE || 'unknown',
-        userAgent: navigator.userAgent
-      });
-
-      // Log to console for debugging
-      console.group('🔍 Diagnostics');
+      // Log to console for developers ONLY
+      console.group('🔍 Error Diagnostics (Dev Only)');
       console.log('Supabase URL:', getEnvVar('VITE_SUPABASE_URL') || getEnvVar('SUPABASE_URL') || 'NOT SET');
       console.log('Has Supabase Key:', !!(getEnvVar('VITE_SUPABASE_ANON_KEY') || getEnvVar('SUPABASE_ANON_KEY')));
       console.log('Environment:', import.meta.env?.MODE || 'unknown');
@@ -44,7 +32,6 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onRetry }) => {
     }
   }, [error]);
 
-  const isConfigError = !diagnostics.supabaseUrl || diagnostics.supabaseUrl === 'NOT SET' || !diagnostics.hasSupabaseKey;
   const isTimeoutError = error.includes('timeout') || error.includes('took too long');
 
   return (
@@ -60,115 +47,38 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onRetry }) => {
             </div>
             <div className="flex-grow">
               <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                {isConfigError ? 'Configuration Error' : isTimeoutError ? 'Connection Timeout' : 'Failed to Load Jobs'}
+                {isTimeoutError ? 'Connection Timeout' : 'Unable to Load Jobs'}
               </h2>
-              <p className="text-slate-600 mb-4">{error}</p>
-            </div>
-          </div>
-
-          {/* Diagnostic Information */}
-          <div className="bg-slate-50 rounded-xl p-6 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Info className="w-5 h-5 text-slate-600" />
-              <h3 className="font-semibold text-slate-900">Diagnostic Information</h3>
-            </div>
-            
-            <div className="space-y-3">
-              {/* Supabase URL */}
-              <div className="flex items-start gap-3">
-                <Database className={`w-5 h-5 mt-0.5 ${
-                  diagnostics.supabaseUrl && diagnostics.supabaseUrl !== 'NOT SET' 
-                    ? 'text-green-600' 
-                    : 'text-red-600'
-                }`} />
-                <div className="flex-grow">
-                  <div className="font-medium text-slate-900">Supabase URL</div>
-                  <div className={`text-sm ${
-                    diagnostics.supabaseUrl && diagnostics.supabaseUrl !== 'NOT SET'
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}>
-                    {diagnostics.supabaseUrl === 'NOT SET' 
-                      ? '❌ Not configured' 
-                      : `✅ ${diagnostics.supabaseUrl.substring(0, 30)}...`}
-                  </div>
-                </div>
-              </div>
-
-              {/* Supabase Key */}
-              <div className="flex items-start gap-3">
-                <Key className={`w-5 h-5 mt-0.5 ${
-                  diagnostics.hasSupabaseKey ? 'text-green-600' : 'text-red-600'
-                }`} />
-                <div className="flex-grow">
-                  <div className="font-medium text-slate-900">Supabase API Key</div>
-                  <div className={`text-sm ${
-                    diagnostics.hasSupabaseKey ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {diagnostics.hasSupabaseKey ? '✅ Configured' : '❌ Not configured'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Environment */}
-              <div className="flex items-start gap-3">
-                <Globe className="w-5 h-5 mt-0.5 text-slate-600" />
-                <div className="flex-grow">
-                  <div className="font-medium text-slate-900">Environment</div>
-                  <div className="text-sm text-slate-600">
-                    {diagnostics.environment}
-                  </div>
-                </div>
-              </div>
+              <p className="text-slate-600 mb-4">
+                {isTimeoutError 
+                  ? 'The database is taking too long to respond. Please try again.' 
+                  : 'We encountered an issue loading jobs from the database.'}
+              </p>
             </div>
           </div>
 
           {/* Solution Steps */}
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
-            <h3 className="font-semibold text-blue-900 mb-3">How to Fix This</h3>
+            <h3 className="font-semibold text-blue-900 mb-3">What You Can Do</h3>
             
-            {isConfigError ? (
+            {isTimeoutError ? (
               <div className="space-y-3 text-sm text-blue-800">
-                <p className="font-medium">Environment variables are missing. Follow these steps:</p>
+                <p>This usually resolves itself. Try the following:</p>
                 <ol className="list-decimal list-inside space-y-2 ml-2">
-                  <li>Go to your Cloudflare Pages project dashboard</li>
-                  <li>Click <strong>Settings</strong> → <strong>Environment variables</strong></li>
-                  <li>Add these variables:
-                    <div className="bg-white rounded p-3 mt-2 font-mono text-xs">
-                      <div>VITE_SUPABASE_URL = https://your-project.supabase.co</div>
-                      <div>VITE_SUPABASE_ANON_KEY = your-anon-key</div>
-                    </div>
-                  </li>
-                  <li>Go to <strong>Deployments</strong> tab</li>
-                  <li>Click <strong>"Retry deployment"</strong> on the latest deployment</li>
-                </ol>
-                <p className="mt-4">
-                  <strong>Get credentials from:</strong> Supabase Dashboard → Project Settings → API
-                </p>
-              </div>
-            ) : isTimeoutError ? (
-              <div className="space-y-3 text-sm text-blue-800">
-                <p>The database is taking too long to respond. This could be due to:</p>
-                <ul className="list-disc list-inside space-y-1 ml-2">
-                  <li>Supabase free tier rate limiting</li>
-                  <li>Large number of jobs in database</li>
-                  <li>Network connectivity issues</li>
-                </ul>
-                <p className="font-medium mt-3">Try:</p>
-                <ol className="list-decimal list-inside space-y-1 ml-2">
-                  <li>Click "Retry" below</li>
-                  <li>Check your Supabase project status</li>
-                  <li>Verify database has active jobs (is_active = true)</li>
+                  <li><strong>Click "Retry"</strong> below to try loading again</li>
+                  <li>Refresh your browser (Ctrl+R or Cmd+R)</li>
+                  <li>Check your internet connection</li>
+                  <li>If the problem persists, try again in a few minutes</li>
                 </ol>
               </div>
             ) : (
               <div className="space-y-2 text-sm text-blue-800">
                 <p>Try these steps:</p>
                 <ol className="list-decimal list-inside space-y-1 ml-2">
-                  <li>Click "Retry" button below</li>
-                  <li>Check browser console (F12) for detailed errors</li>
-                  <li>Verify Supabase project is active</li>
-                  <li>Check environment variables in Cloudflare Pages settings</li>
+                  <li><strong>Click "Retry"</strong> button below</li>
+                  <li>Refresh your browser page</li>
+                  <li>Clear your browser cache and cookies</li>
+                  <li>Try a different browser or device</li>
                 </ol>
               </div>
             )}
@@ -191,11 +101,24 @@ const ErrorPage: React.FC<ErrorPageProps> = ({ error, onRetry }) => {
             </button>
           </div>
 
-          {/* Debug Console Hint */}
+          {/* Developer Toggle (Hidden by default) */}
           <div className="mt-6 pt-6 border-t border-slate-200">
-            <p className="text-sm text-slate-500 text-center">
-              For detailed error information, open browser console (Press F12)
-            </p>
+            <button
+              onClick={() => setShowDetails(!showDetails)}
+              className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
+            >
+              {showDetails ? '▼ Hide' : '▶'} Technical Details (for developers)
+            </button>
+            {showDetails && (
+              <div className="mt-4 p-4 bg-slate-50 rounded-lg">
+                <p className="text-xs font-mono text-slate-600 break-all">
+                  Error: {error}
+                </p>
+                <p className="text-xs text-slate-500 mt-2">
+                  For more details, open browser console (Press F12)
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
