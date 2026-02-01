@@ -1,16 +1,33 @@
-# robots.txt for AcrossJob.com
-# Allow all search engines to crawl everything
+# robots.txt for acrossjob.com
+# Updated: February 2026
 
+# Allow all search engines to crawl the site
 User-agent: *
 Allow: /
 
-# Sitemap location
+# Block API endpoints and admin pages from indexing
+User-agent: *
+Disallow: /api/
+Disallow: /admin/
+
+# Sitemap location for search engines
 Sitemap: https://acrossjob.com/sitemap.xml
 
-# Crawl-delay for polite bots (optional)
+# Crawl-delay to be respectful to servers
 Crawl-delay: 1
 
-# Block admin or sensitive areas (if any)
-# User-agent: *
-# Disallow: /admin/
-# Disallow: /api/
+# Allow common search engine bots (explicitly)
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
