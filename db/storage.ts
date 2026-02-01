@@ -10,17 +10,43 @@ interface PaginatedResult<T> {
 }
 
 /**
- * Helper function to check if search term matches as whole word in title
- * Prevents "intern" from matching "International"
+ * Helper function to check if search term matches intelligently
+ * 
+ * Rules:
+ * - "intern" matches "intern" and "internship" but NOT "international"
+ * - "senior" matches "senior" but NOT "seniority" 
+ * - Uses word boundaries + common suffixes
  */
-function matchesWholeWord(title: string, searchTerm: string): boolean {
+function matchesSmartSearch(title: string, searchTerm: string): boolean {
   const titleLower = title.toLowerCase();
-  const searchLower = searchTerm.toLowerCase();
+  const searchLower = searchTerm.toLowerCase().trim();
   
-  // Create word boundary regex
-  // \b matches word boundaries (spaces, hyphens, start/end of string)
-  const regex = new RegExp(`\\b${searchLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-  return regex.test(title);
+  // Escape special regex characters
+  const escapedSearch = searchLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  
+  // Common job title suffixes to allow
+  const allowedSuffixes = [
+    '',           // exact match: "intern"
+    'ship',       // internship
+    's',          // interns, engineers, managers
+    'ing',        // engineering (though less common in titles)
+  ];
+  
+  // Create regex pattern: \b{search}(ship|s|ing)?\b
+  const suffixPattern = allowedSuffixes.filter(s => s).join('|'); // "ship|s|ing"
+  const pattern = suffixPattern 
+    ? `\\b${escapedSearch}(${suffixPattern})?\\b`
+    : `\\b${escapedSearch}\\b`;
+  
+  const regex = new RegExp(pattern, 'i');
+  const matches = regex.test(title);
+  
+  // Debug logging
+  if (matches) {
+    console.log(`✅ Match: "${searchTerm}" in "${title}"`);
+  }
+  
+  return matches;
 }
 
 export const storage = {
@@ -67,8 +93,7 @@ export const storage = {
         query = query.or(`location_city.ilike.%${options.location}%,location_country.ilike.%${options.location}%`);
       }
       
-      // For search, get more results and filter client-side
-      // This ensures word boundary matching works correctly
+      // For search, get more results and filter client-side with smart matching
       const hasSearch = !!options?.search;
       if (hasSearch) {
         // Broad search to get candidates
@@ -107,10 +132,10 @@ export const storage = {
         company: item.company || {}
       })) as JobWithCompany[];
       
-      // Apply client-side word boundary filtering if search term provided
+      // Apply smart search filtering if search term provided
       if (hasSearch && options?.search) {
-        jobs = jobs.filter(job => matchesWholeWord(job.title, options.search!));
-        console.log(`✅ Filtered to ${jobs.length} jobs with whole-word match`);
+        jobs = jobs.filter(job => matchesSmartSearch(job.title, options.search!));
+        console.log(`✅ Filtered to ${jobs.length} jobs with smart search`);
       } else {
         console.log(`✅ Loaded ${jobs.length} jobs`);
       }
@@ -190,7 +215,7 @@ export const storage = {
     }
   ): Promise<PaginatedResult<JobWithCompany>> {
     try {
-      // For search with word boundaries, we need to fetch more results
+      // For search with smart matching, we need to fetch more results
       // then filter client-side
       const hasSearch = !!filters?.search;
       const fetchPerPage = hasSearch ? perPage * 3 : perPage; // Fetch 3x more if searching
@@ -232,9 +257,9 @@ export const storage = {
         company: item.company || {}
       })) as JobWithCompany[];
 
-      // Apply word boundary filter if searching
+      // Apply smart search filter if searching
       if (hasSearch && filters?.search) {
-        jobs = jobs.filter(job => matchesWholeWord(job.title, filters.search!));
+        jobs = jobs.filter(job => matchesSmartSearch(job.title, filters.search!));
         // Trim to requested page size
         jobs = jobs.slice(0, perPage);
       }
