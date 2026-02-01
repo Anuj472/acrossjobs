@@ -9,33 +9,6 @@ interface PaginatedResult<T> {
   totalPages: number;
 }
 
-/**
- * Helper function to check if search term matches intelligently
- * 
- * Rules:
- * - "intern" matches "intern", "internship", "interns" 
- * - But NOT "international", "winternationale"
- * - Checks if search term starts a word (after space, hyphen, comma, or at beginning)
- */
-function matchesSmartSearch(title: string, searchTerm: string): boolean {
-  const titleLower = title.toLowerCase();
-  const searchLower = searchTerm.toLowerCase().trim();
-  
-  // Check if title contains the search term at word boundaries
-  // This regex checks if search term appears:
-  // - At start of string, OR
-  // - After a space, hyphen, comma, or parenthesis
-  // Followed by optional common suffixes (ship, s, ing)
-  
-  const escapedSearch = searchLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  
-  // Pattern: (start of string OR space/punctuation) + search + optional suffix + word boundary
-  const pattern = `(^|[\\s,\\-\\(])${escapedSearch}(ship|s|ing)?\\b`;
-  const regex = new RegExp(pattern, 'i');
-  
-  return regex.test(title);
-}
-
 export const storage = {
   /**
    * Get jobs with pagination support
@@ -80,10 +53,8 @@ export const storage = {
         query = query.or(`location_city.ilike.%${options.location}%,location_country.ilike.%${options.location}%`);
       }
       
-      // For search, get more results and filter client-side with smart matching
-      const hasSearch = !!options?.search;
-      if (hasSearch) {
-        // Broad search to get candidates
+      // Simple title-only search
+      if (options?.search) {
         query = query.ilike('title', `%${options.search}%`);
       }
       
@@ -113,22 +84,13 @@ export const storage = {
 
       if (!data) return [];
 
+      console.log(`✅ Loaded ${data.length} jobs`);
+      
       // Transform to JobWithCompany format
-      let jobs = data.map((item: any) => ({
+      return data.map((item: any) => ({
         ...item,
         company: item.company || {}
       })) as JobWithCompany[];
-      
-      // Apply smart search filtering if search term provided
-      if (hasSearch && options?.search) {
-        const beforeFilter = jobs.length;
-        jobs = jobs.filter(job => matchesSmartSearch(job.title, options.search!));
-        console.log(`🔍 Search "${options.search}": ${beforeFilter} candidates → ${jobs.length} matches`);
-      } else {
-        console.log(`✅ Loaded ${jobs.length} jobs`);
-      }
-      
-      return jobs;
     } catch (error) {
       console.error('Error fetching jobs with companies:', error);
       return [];
@@ -190,9 +152,6 @@ export const storage = {
   /**
    * Get paginated jobs with total count
    * Perfect for pagination UI
-   * 
-   * IMPORTANT: For searches, fetches ALL matching results first,
-   * then filters and paginates to ensure correct counts
    */
   async getJobsPaginated(
     page: number = 1,
@@ -206,9 +165,6 @@ export const storage = {
     }
   ): Promise<PaginatedResult<JobWithCompany>> {
     try {
-      const hasSearch = !!filters?.search;
-      
-      // Build base query
       let query = supabase
         .from('jobs')
         .select(`
@@ -226,55 +182,26 @@ export const storage = {
         query = query.or(`location_city.ilike.%${filters.location}%,location_country.ilike.%${filters.location}%`);
       }
       
-      // For search: Fetch more candidates (up to 1000 for thorough search)
-      // We'll filter client-side and paginate after
-      if (hasSearch && filters?.search) {
+      // Simple title-only search
+      if (filters?.search) {
         query = query.ilike('title', `%${filters.search}%`);
-        // Fetch up to 1000 candidates for search to ensure we get all matches
-        query = query.range(0, 999);
-      } else {
-        // No search: Normal pagination
-        const from = (page - 1) * perPage;
-        const to = from + perPage - 1;
-        query = query.range(from, to);
       }
+      
+      // Calculate range
+      const from = (page - 1) * perPage;
+      const to = from + perPage - 1;
+      
+      query = query.range(from, to);
       
       const { data, error, count } = await query;
 
       if (error) throw error;
 
-      let jobs = (data || []).map((item: any) => ({
+      const jobs = (data || []).map((item: any) => ({
         ...item,
         company: item.company || {}
       })) as JobWithCompany[];
 
-      // Apply smart search filter if searching
-      if (hasSearch && filters?.search) {
-        const candidateCount = jobs.length;
-        const allFilteredJobs = jobs.filter(job => matchesSmartSearch(job.title, filters.search!));
-        
-        console.log(`🔍 Search "${filters.search}": ${candidateCount} candidates → ${allFilteredJobs.length} filtered matches`);
-        
-        // Now paginate the filtered results
-        const totalFiltered = allFilteredJobs.length;
-        const startIdx = (page - 1) * perPage;
-        const endIdx = startIdx + perPage;
-        jobs = allFilteredJobs.slice(startIdx, endIdx);
-        
-        const totalPages = Math.ceil(totalFiltered / perPage);
-        
-        console.log(`📄 Page ${page}/${totalPages} - ${jobs.length} jobs (${totalFiltered} total matches)`);
-        
-        return {
-          data: jobs,
-          total: totalFiltered,  // Use filtered count!
-          page,
-          perPage,
-          totalPages
-        };
-      }
-
-      // No search: Use database count
       const total = count || 0;
       const totalPages = Math.ceil(total / perPage);
 
