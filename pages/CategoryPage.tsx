@@ -273,21 +273,26 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
             
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Keyword</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Job Title</label>
                 <input 
                   type="text"
-                  placeholder="e.g. Engineer"
+                  placeholder="e.g. Intern, Engineer, Manager"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
+                {search && (
+                  <p className="text-xs text-slate-500 mt-1">
+                    Searching in job titles only
+                  </p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Location</label>
                 <input 
                   type="text"
-                  placeholder="e.g. Remote"
+                  placeholder="e.g. Remote, New York"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
@@ -362,7 +367,14 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">No matching jobs</h3>
               <p className="text-slate-500 mb-6">
-                Try broadening your search or adjusting filters.
+                {search ? (
+                  <>
+                    No jobs found with <strong>"{search}"</strong> in the title.<br />
+                    Try a different search term or clear filters.
+                  </>
+                ) : (
+                  'Try broadening your search or adjusting filters.'
+                )}
               </p>
               <button 
                 type="button"
