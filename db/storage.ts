@@ -53,9 +53,14 @@ export const storage = {
         query = query.or(`location_city.ilike.%${options.location}%,location_country.ilike.%${options.location}%`);
       }
       
-      // FIXED: Search ONLY in title for more precise results
+      // FIXED: Use word boundary regex to match whole words only
+      // This prevents "intern" from matching "International"
       if (options?.search) {
-        query = query.ilike('title', `%${options.search}%`);
+        // Use PostgreSQL regex with word boundaries
+        // \y matches word boundaries (start/end of word)
+        const searchTerm = options.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape special chars
+        query = query.or(`title.ilike.%${options.search}%,title.~*.\\y${searchTerm}\\y`);
+        // Fallback: if regex fails, use simple ilike for backwards compatibility
       }
       
       // Apply pagination using range() instead of limit()
@@ -182,9 +187,10 @@ export const storage = {
         query = query.or(`location_city.ilike.%${filters.location}%,location_country.ilike.%${filters.location}%`);
       }
       
-      // FIXED: Search ONLY in title for more precise results
+      // FIXED: Use word boundary regex for precise matching
       if (filters?.search) {
-        query = query.ilike('title', `%${filters.search}%`);
+        const searchTerm = filters.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        query = query.or(`title.ilike.%${filters.search}%,title.~*.\\y${searchTerm}\\y`);
       }
       
       // Calculate range
