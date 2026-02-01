@@ -1,3 +1,8 @@
 name = "acrossjob"
 pages_build_output_dir = "dist"
 compatibility_date = "2024-11-18"
+
+# Environment variables for sitemap generation
+[env.production]
+VITE_SUPABASE_URL = ""
+VITE_SUPABASE_ANON_KEY = ""
