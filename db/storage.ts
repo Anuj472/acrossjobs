@@ -53,7 +53,7 @@ export const storage = {
         query = query.or(`location_city.ilike.%${options.location}%,location_country.ilike.%${options.location}%`);
       }
       
-      // Simple title-only search
+      // FIXED: Search ONLY in title for more precise results
       if (options?.search) {
         query = query.ilike('title', `%${options.search}%`);
       }
@@ -182,7 +182,7 @@ export const storage = {
         query = query.or(`location_city.ilike.%${filters.location}%,location_country.ilike.%${filters.location}%`);
       }
       
-      // Simple title-only search
+      // FIXED: Search ONLY in title for more precise results
       if (filters?.search) {
         query = query.ilike('title', `%${filters.search}%`);
       }
