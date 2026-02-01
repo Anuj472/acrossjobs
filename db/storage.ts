@@ -39,14 +39,7 @@ function matchesSmartSearch(title: string, searchTerm: string): boolean {
     : `\\b${escapedSearch}\\b`;
   
   const regex = new RegExp(pattern, 'i');
-  const matches = regex.test(title);
-  
-  // Debug logging
-  if (matches) {
-    console.log(`✅ Match: "${searchTerm}" in "${title}"`);
-  }
-  
-  return matches;
+  return regex.test(title);
 }
 
 export const storage = {
@@ -202,6 +195,9 @@ export const storage = {
   /**
    * Get paginated jobs with total count
    * Perfect for pagination UI
+   * 
+   * IMPORTANT: For searches, fetches ALL matching results first,
+   * then filters and paginates to ensure correct counts
    */
   async getJobsPaginated(
     page: number = 1,
@@ -215,11 +211,9 @@ export const storage = {
     }
   ): Promise<PaginatedResult<JobWithCompany>> {
     try {
-      // For search with smart matching, we need to fetch more results
-      // then filter client-side
       const hasSearch = !!filters?.search;
-      const fetchPerPage = hasSearch ? perPage * 3 : perPage; // Fetch 3x more if searching
       
+      // Build base query
       let query = supabase
         .from('jobs')
         .select(`
@@ -237,16 +231,18 @@ export const storage = {
         query = query.or(`location_city.ilike.%${filters.location}%,location_country.ilike.%${filters.location}%`);
       }
       
-      // Broad search first
+      // For search: Fetch ALL matching results (up to 500 for safety)
+      // We'll filter client-side and paginate after
       if (hasSearch && filters?.search) {
         query = query.ilike('title', `%${filters.search}%`);
+        // Fetch up to 500 candidates for search
+        query = query.range(0, 499);
+      } else {
+        // No search: Normal pagination
+        const from = (page - 1) * perPage;
+        const to = from + perPage - 1;
+        query = query.range(from, to);
       }
-      
-      // Calculate range
-      const from = (page - 1) * fetchPerPage;
-      const to = from + fetchPerPage - 1;
-      
-      query = query.range(from, to);
       
       const { data, error, count } = await query;
 
@@ -259,11 +255,28 @@ export const storage = {
 
       // Apply smart search filter if searching
       if (hasSearch && filters?.search) {
-        jobs = jobs.filter(job => matchesSmartSearch(job.title, filters.search!));
-        // Trim to requested page size
-        jobs = jobs.slice(0, perPage);
+        const allFilteredJobs = jobs.filter(job => matchesSmartSearch(job.title, filters.search!));
+        
+        // Now paginate the filtered results
+        const totalFiltered = allFilteredJobs.length;
+        const startIdx = (page - 1) * perPage;
+        const endIdx = startIdx + perPage;
+        jobs = allFilteredJobs.slice(startIdx, endIdx);
+        
+        const totalPages = Math.ceil(totalFiltered / perPage);
+        
+        console.log(`📄 Search "${filters.search}": Page ${page}/${totalPages} - ${jobs.length} jobs (${totalFiltered} total matches)`);
+        
+        return {
+          data: jobs,
+          total: totalFiltered,  // Use filtered count!
+          page,
+          perPage,
+          totalPages
+        };
       }
 
+      // No search: Use database count
       const total = count || 0;
       const totalPages = Math.ceil(total / perPage);
 
