@@ -53,8 +53,9 @@ export const storage = {
         query = query.or(`location_city.ilike.%${options.location}%,location_country.ilike.%${options.location}%`);
       }
       
+      // FIXED: Search ONLY in title for more precise results
       if (options?.search) {
-        query = query.or(`title.ilike.%${options.search}%,description.ilike.%${options.search}%`);
+        query = query.ilike('title', `%${options.search}%`);
       }
       
       // Apply pagination using range() instead of limit()
@@ -180,8 +181,10 @@ export const storage = {
       if (filters?.location) {
         query = query.or(`location_city.ilike.%${filters.location}%,location_country.ilike.%${filters.location}%`);
       }
+      
+      // FIXED: Search ONLY in title for more precise results
       if (filters?.search) {
-        query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+        query = query.ilike('title', `%${filters.search}%`);
       }
       
       // Calculate range
