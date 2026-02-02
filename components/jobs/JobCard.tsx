@@ -19,11 +19,15 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
     setMounted(true);
   }, []);
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('JobCard clicked:', job.id, job.title);
-    onSelect(job);
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Only prevent default if it's a normal left-click without modifiers
+    // This allows Ctrl+Click, Middle-click, and Right-click to work normally
+    if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('JobCard clicked:', job.id, job.title);
+      onSelect(job);
+    }
   };
 
   const renderLogo = () => {
@@ -45,18 +49,14 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
     );
   };
 
+  // Generate the job detail URL path
+  const jobUrl = `/job/${job.id}`;
+
   return (
-    <div 
+    <a 
+      href={jobUrl}
       onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect(job);
-        }
-      }}
-      className={`bg-white border border-slate-200 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group overflow-hidden ${
+      className={`bg-white border border-slate-200 rounded-xl hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group overflow-hidden block no-underline ${
         isGrid ? 'flex flex-col p-4 sm:p-6' : 'flex flex-col sm:flex-row items-start sm:items-center p-4 sm:p-5 gap-3 sm:gap-5'
       }`}
     >
@@ -125,7 +125,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
           View Details
         </div>
       </div>
-    </div>
+    </a>
   );
 };
 
