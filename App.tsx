@@ -26,10 +26,23 @@ const parsePath = (path: string): string => {
   if (cleanPath === 'admin') return 'admin';
   if (cleanPath === 'jobs') return 'home';
   
+  // Handle /job/{id} pattern (singular)
+  if (cleanPath.startsWith('job/')) {
+    const parts = cleanPath.split('/');
+    if (parts.length === 2 && parts[1]) {
+      return `job:${parts[1]}`;
+    }
+  }
+  
+  // Handle /jobs/{category}/{id} pattern (plural)
   if (cleanPath.startsWith('jobs/')) {
     const parts = cleanPath.split('/');
-    if (parts.length === 3) return `job:${parts[2]}`;
-    if (parts.length === 2) return `category:${parts[1]}`;
+    if (parts.length === 3 && parts[2]) {
+      return `job:${parts[2]}`;
+    }
+    if (parts.length === 2 && parts[1]) {
+      return `category:${parts[1]}`;
+    }
     return 'home';
   }
   
@@ -82,8 +95,8 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
       }
       else if (page.startsWith('job:')) {
         const id = page.split(':')[1];
-        const job = jobsWithCompany.find(j => j.id === id);
-        newPath = `/jobs/${job?.category || 'all'}/${id}`;
+        // Use the simpler /job/{id} pattern for job detail pages
+        newPath = `/job/${id}`;
       } 
       else if (page === 'page:about') newPath = '/about-us';
       else if (page === 'page:contact') newPath = '/contact';
