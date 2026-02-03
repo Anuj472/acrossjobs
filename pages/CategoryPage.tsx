@@ -75,26 +75,33 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
     try {
       const filters: any = {};
       
+      // Apply category filter
       if (actualCategory !== 'all') {
         filters.category = actualCategory;
       }
       
+      // Apply location filter
       if (location) {
         filters.location = location;
       }
       
+      // Apply job type filter (Remote/Hybrid/On-site)
       if (jobType !== 'all') {
         filters.jobType = jobType;
       }
       
+      // Apply experience level filter
       if (experienceLevel !== 'all') {
         filters.experienceLevel = experienceLevel;
       }
       
+      // Apply search filter (title search)
       // Combine search and subcategory filter
       if (search || subcategoryFilter) {
         filters.search = search || subcategoryFilter;
       }
+
+      console.log('🔍 Applying filters:', filters);
 
       const result = await storage.getJobsPaginated(currentPage, JOBS_PER_PAGE, filters);
       
@@ -141,6 +148,15 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
+  // Count active filters
+  const activeFilterCount = [
+    search,
+    location,
+    jobType !== 'all' ? jobType : null,
+    experienceLevel !== 'all' ? experienceLevel : null,
+    subcategoryFilter
+  ].filter(Boolean).length;
 
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -261,6 +277,9 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
         </h1>
         <p className="text-lg text-slate-600">
           {loading ? 'Loading...' : `Showing ${totalJobs.toLocaleString()} active opportunities`}
+          {activeFilterCount > 0 && (
+            <span className="text-indigo-600 font-medium"> with {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} applied</span>
+          )}
         </p>
       </div>
 
@@ -276,14 +295,14 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Job Title</label>
                 <input 
                   type="text"
-                  placeholder="e.g. Intern, Engineer, Manager"
+                  placeholder="e.g. Data, Engineer, Manager"
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
                 {search && (
-                  <p className="text-xs text-slate-500 mt-1">
-                    Searching in job titles only
+                  <p className="text-xs text-indigo-600 mt-1 font-medium">
+                    ✓ Searching for "{search}"
                   </p>
                 )}
               </div>
@@ -297,6 +316,11 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                 />
+                {location && (
+                  <p className="text-xs text-indigo-600 mt-1 font-medium">
+                    ✓ Location: {location}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -311,6 +335,11 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
                     <option key={r.value} value={r.value}>{r.label}</option>
                   ))}
                 </select>
+                {jobType !== 'all' && (
+                  <p className="text-xs text-indigo-600 mt-1 font-medium">
+                    ✓ {REMOTE_STATUSES.find(r => r.value === jobType)?.label}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -324,15 +353,24 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
                     <option key={level.value} value={level.value}>{level.label}</option>
                   ))}
                 </select>
+                {experienceLevel !== 'all' && (
+                  <p className="text-xs text-indigo-600 mt-1 font-medium">
+                    ✓ {experienceLevel}
+                  </p>
+                )}
               </div>
 
-              <button 
-                type="button"
-                onClick={handleClearFilters}
-                className="w-full text-xs font-semibold text-slate-400 hover:text-indigo-600 transition-colors pt-2 cursor-pointer"
-              >
-                Clear all filters
-              </button>
+              {activeFilterCount > 0 && (
+                <div className="pt-4 border-t border-slate-200">
+                  <button 
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="w-full px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors cursor-pointer"
+                  >
+                    Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </aside>
@@ -367,22 +405,24 @@ const CategoryPage: React.FC<CategoryPageProps> = ({ categoryKey, onNavigate, al
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">No matching jobs</h3>
               <p className="text-slate-500 mb-6">
-                {search ? (
+                {activeFilterCount > 0 ? (
                   <>
-                    No jobs found with <strong>"{search}"</strong> in the title.<br />
-                    Try a different search term or clear filters.
+                    No jobs match all {activeFilterCount} of your selected filters.<br />
+                    Try removing some filters to see more results.
                   </>
                 ) : (
-                  'Try broadening your search or adjusting filters.'
+                  'No jobs available in this category at the moment.'
                 )}
               </p>
-              <button 
-                type="button"
-                onClick={handleClearFilters}
-                className="px-6 py-2 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-all cursor-pointer"
-              >
-                Reset Filters
-              </button>
+              {activeFilterCount > 0 && (
+                <button 
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="px-6 py-2 bg-slate-900 text-white rounded-lg font-bold hover:bg-slate-800 transition-all cursor-pointer"
+                >
+                  Clear All Filters
+                </button>
+              )}
             </div>
           )}
         </main>
