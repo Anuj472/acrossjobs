@@ -9,6 +9,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   const handleNavClick = (e: React.MouseEvent<HTMLButtonElement>, page: string) => {
     e.preventDefault();
@@ -28,20 +29,18 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
               onClick={(e) => handleNavClick(e, 'home')}
               className="flex-shrink-0 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
             >
-              <img 
-                src="https://drive.google.com/uc?export=view&id=1Xuuu8e60CwTy32gBUVma10jxuiZrwSzX" 
-                alt="AcrossJob Logo" 
-                className="h-10 w-auto object-contain"
-                onError={(e) => {
-                  // Fallback to text logo if image fails to load
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  const fallback = document.createElement('div');
-                  fallback.className = 'w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold italic';
-                  fallback.textContent = 'AJ';
-                  target.parentElement?.insertBefore(fallback, target);
-                }}
-              />
+              {!logoError ? (
+                <img 
+                  src="https://drive.google.com/uc?export=view&id=1Xuuu8e60CwTy32gBUVma10jxuiZrwSzX" 
+                  alt="AcrossJob Logo" 
+                  className="h-10 w-auto object-contain"
+                  onError={() => setLogoError(true)}
+                />
+              ) : (
+                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold italic">
+                  AJ
+                </div>
+              )}
               <span className="text-xl font-bold text-slate-900 tracking-tight">AcrossJob</span>
             </button>
             <div className="hidden md:ml-8 md:flex md:space-x-4">
