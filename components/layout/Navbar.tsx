@@ -29,30 +29,22 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
               onClick={(e) => handleNavClick(e, 'home')}
               className="flex-shrink-0 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
             >
-              {/* Logo - Try multiple sources */}
+              {/* Logo Image from Google Drive */}
               {!logoError ? (
                 <img 
-                  src="https://i.imgur.com/YourImageID.png" 
-                  alt="AcrossJob" 
+                  src="https://lh3.googleusercontent.com/d/1Xuuu8e60CwTy32gBUVma10jxuiZrwSzX" 
+                  alt="AcrossJob Logo" 
                   className="h-10 w-10 object-contain"
-                  onError={() => {
-                    // Fallback to a simple styled div
-                    setLogoError(true);
-                  }}
+                  onError={() => setLogoError(true)}
+                  crossOrigin="anonymous"
                 />
               ) : (
-                // Styled logo fallback that looks professional
-                <div className="relative h-10 w-10 flex-shrink-0">
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                    </svg>
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                    <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
+                // Fallback logo
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-indigo-600 to-green-500 rounded-lg flex items-center justify-center relative">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                  </svg>
+                  <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-green-400 rounded-full"></div>
                 </div>
               )}
               <span className="text-xl font-bold text-slate-900 tracking-tight">AcrossJob</span>
