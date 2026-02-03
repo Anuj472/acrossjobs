@@ -7,6 +7,7 @@ interface NavbarProps {
   currentPage: string;
 }
 
+// Updated: Logo-only branding
 const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
@@ -29,7 +30,7 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
               onClick={(e) => handleNavClick(e, 'home')}
               className="flex-shrink-0 flex items-center cursor-pointer hover:opacity-80 transition-opacity"
             >
-              {/* Logo Only - Bigger */}
+              {/* Logo Only - No Text */}
               {!logoError ? (
                 <img 
                   src="https://lh3.googleusercontent.com/d/1Xuuu8e60CwTy32gBUVma10jxuiZrwSzX" 
