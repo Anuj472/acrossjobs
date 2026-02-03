@@ -27,21 +27,23 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
             <button 
               type="button"
               onClick={(e) => handleNavClick(e, 'home')}
-              className="flex-shrink-0 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+              className="flex-shrink-0 flex items-center cursor-pointer hover:opacity-80 transition-opacity"
             >
               {!logoError ? (
                 <img 
                   src="https://drive.google.com/uc?export=view&id=1Xuuu8e60CwTy32gBUVma10jxuiZrwSzX" 
-                  alt="AcrossJob Logo" 
-                  className="h-10 w-auto object-contain"
+                  alt="AcrossJob" 
+                  className="h-12 w-auto object-contain"
                   onError={() => setLogoError(true)}
                 />
               ) : (
-                <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold italic">
-                  AJ
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold italic">
+                    AJ
+                  </div>
+                  <span className="text-xl font-bold text-slate-900 tracking-tight">AcrossJob</span>
                 </div>
               )}
-              <span className="text-xl font-bold text-slate-900 tracking-tight">AcrossJob</span>
             </button>
             <div className="hidden md:ml-8 md:flex md:space-x-4">
               {JOB_CATEGORIES.map((cat) => (
