@@ -1,5 +1,5 @@
 import React, { useState, useMemo, memo, useCallback } from 'react';
-import { ICONS, JOB_CATEGORIES, JOB_ROLES, EXPERIENCE_LEVELS } from '../constants';
+import { ICONS, JOB_CATEGORIES, JOB_ROLES, EXPERIENCE_LEVELS, REMOTE_STATUSES } from '../constants';
 import { JobWithCompany } from '../types';
 import JobCard from '../components/jobs/JobCard';
 
@@ -12,6 +12,7 @@ interface HomeProps {
 const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
   const [search, setSearch] = useState('');
   const [city, setCity] = useState('');
+  const [jobType, setJobType] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('');
   const [isSearchActive, setIsSearchActive] = useState(false);
 
@@ -26,7 +27,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
     return Array.from(cities).sort();
   }, [allJobs]);
 
-  // Filter jobs based on search criteria
+  // Filter jobs based on search criteria - ALL filters must match (AND logic)
   const filteredJobs = useMemo(() => {
     if (!isSearchActive) {
       return featuredJobs; // Show only featured when not searching
@@ -43,13 +44,17 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
         `${job.location_city}, ${job.location_country}` === city ||
         (job.location_city || '').toLowerCase().includes(city.toLowerCase());
 
+      // Job Type check (Remote, Hybrid, On-site)
+      const matchesJobType = !jobType || job.job_type === jobType;
+
       // Experience level check
       const matchesExperience = !experienceLevel || 
         job.experience_level === experienceLevel;
       
-      return matchesSearch && matchesCity && matchesExperience;
+      // ALL conditions must be true (AND logic)
+      return matchesSearch && matchesCity && matchesJobType && matchesExperience;
     });
-  }, [allJobs, featuredJobs, isSearchActive, search, city, experienceLevel]);
+  }, [allJobs, featuredJobs, isSearchActive, search, city, jobType, experienceLevel]);
 
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -59,6 +64,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
   const handleClearSearch = useCallback(() => {
     setSearch('');
     setCity('');
+    setJobType('');
     setExperienceLevel('');
     setIsSearchActive(false);
   }, []);
@@ -81,6 +87,16 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
     onNavigate('category:all');
   }, [onNavigate]);
 
+  // Build active filter description for display
+  const activeFiltersDescription = useMemo(() => {
+    const filters = [];
+    if (search) filters.push(`"${search}"`);
+    if (city) filters.push(`in ${city}`);
+    if (jobType) filters.push(REMOTE_STATUSES.find(r => r.value === jobType)?.label || jobType);
+    if (experienceLevel) filters.push(experienceLevel);
+    return filters.join(' • ');
+  }, [search, city, jobType, experienceLevel]);
+
   return (
     <div className="flex flex-col gap-20 pb-20">
       {/* Hero Section */}
@@ -100,7 +116,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
 
           <form 
             onSubmit={handleSearch}
-            className="bg-white p-3 rounded-2xl shadow-2xl grid grid-cols-1 md:grid-cols-10 gap-2 max-w-5xl mx-auto"
+            className="bg-white p-3 rounded-2xl shadow-2xl grid grid-cols-1 md:grid-cols-12 gap-2 max-w-6xl mx-auto"
           >
             {/* Keyword Search */}
             <div className="md:col-span-3 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
@@ -125,6 +141,21 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
                 <option value="">All Locations</option>
                 {availableCities.map((loc, idx) => (
                   <option key={idx} value={loc}>{loc}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Job Type (Remote/Hybrid/On-site) */}
+            <div className="md:col-span-2 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
+              <span className="text-slate-400 mr-2">{ICONS.home}</span>
+              <select
+                value={jobType}
+                onChange={(e) => setJobType(e.target.value)}
+                className="w-full outline-none text-slate-900 py-1 bg-white cursor-pointer text-sm"
+              >
+                <option value="">All Types</option>
+                {REMOTE_STATUSES.map((status) => (
+                  <option key={status.value} value={status.value}>{status.label}</option>
                 ))}
               </select>
             </div>
@@ -181,9 +212,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
             </h2>
             <p className="text-slate-600">
               Found {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'}
-              {search && ` matching "${search}"`}
-              {city && ` in ${city}`}
-              {experienceLevel && ` for ${experienceLevel}`}
+              {activeFiltersDescription && ` matching ${activeFiltersDescription}`}
             </p>
           </div>
           
@@ -204,7 +233,8 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">No jobs found</h3>
               <p className="text-slate-500 mb-6">
-                Try adjusting your search criteria or clearing filters
+                No jobs match all your selected filters.<br />
+                Try adjusting or removing some filters to see more results.
               </p>
               <button 
                 onClick={handleClearSearch}
