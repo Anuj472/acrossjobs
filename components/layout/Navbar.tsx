@@ -26,15 +26,11 @@ const Navbar: React.FC<NavbarProps> = ({ onNavigate, currentPage }) => {
             <button 
               type="button"
               onClick={(e) => handleNavClick(e, 'home')}
-              className="flex-shrink-0 flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+              className="flex-shrink-0 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
             >
-              {/* Logo Image */}
-              <img 
-                src="https://drive.google.com/uc?export=view&id=1Xuuu8e60CwTy32gBUVma10jxuiZrwSzX" 
-                alt="AcrossJob Logo" 
-                className="h-10 w-auto object-contain"
-              />
-              {/* AcrossJob Text */}
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold italic">
+                AJ
+              </div>
               <span className="text-xl font-bold text-slate-900 tracking-tight">AcrossJob</span>
             </button>
             <div className="hidden md:ml-8 md:flex md:space-x-4">
