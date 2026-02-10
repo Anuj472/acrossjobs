@@ -1,0 +1,63 @@
+name: LinkedIn Job Posting
+
+on:
+  schedule:
+    # Runs daily at 10:30 PM IST (5:00 PM UTC)
+    # IST is UTC+5:30, so 22:30 IST = 17:00 UTC
+    - cron: '0 17 * * *'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  post-first-job:
+    runs-on: ubuntu-latest
+    name: Post First Job to LinkedIn
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Post first job to LinkedIn
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_URN: ${{ secrets.LINKEDIN_URN }}
+        run: node scripts/post-to-linkedin.js
+  
+  post-second-job:
+    runs-on: ubuntu-latest
+    name: Post Second Job to LinkedIn (20 min later)
+    needs: post-first-job
+    
+    steps:
+      - name: Wait 20 minutes
+        run: sleep 1200  # 1200 seconds = 20 minutes
+      
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Post second job to LinkedIn
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_URN: ${{ secrets.LINKEDIN_URN }}
+        run: node scripts/post-to-linkedin.js
