@@ -4,6 +4,7 @@ import { ICONS } from '../constants';
 import { formatSalary } from '../lib/utils/format';
 import { formatJobDescription } from '../lib/utils/html';
 import LinkedInReferralButton from '../components/jobs/LinkedInReferralButton';
+import { SEOHead } from '../components/SEOHead';
 
 interface JobDetailPageProps {
   job: JobWithCompany;
@@ -12,6 +13,15 @@ interface JobDetailPageProps {
 
 const JobDetailPage: React.FC<JobDetailPageProps> = ({ job, onNavigate }) => {
   const [imgError, setImgError] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    // Check if job is expired (older than 90 days)
+    const jobDate = new Date(job.created_at);
+    const now = new Date();
+    const daysDiff = Math.floor((now.getTime() - jobDate.getTime()) / (1000 * 60 * 60 * 24));
+    setIsExpired(daysDiff > 90);
+  }, [job.created_at]);
 
   const categoryLabel = (cat: string) => {
     if (cat === 'it') return 'IT';
@@ -23,7 +33,15 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ job, onNavigate }) => {
   
   const truncatedAbout = aboutText.split(' ').slice(0, 80).join(' ') + '...';
 
+  // Only add schema markup if job is not expired
   useEffect(() => {
+    if (isExpired) {
+      // Remove any existing schema markup for expired jobs
+      const existing = document.head.querySelector('script[type="application/ld+json"]');
+      if (existing) document.head.removeChild(existing);
+      return;
+    }
+
     const jsonLd = {
       "@context": "https://schema.org/",
       "@type": "JobPosting",
@@ -56,7 +74,7 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ job, onNavigate }) => {
       const existing = document.head.querySelector('script[type="application/ld+json"]');
       if (existing) document.head.removeChild(existing);
     };
-  }, [job]);
+  }, [job, isExpired]);
 
   const renderLogo = (className: string) => {
     if (!job.company.logo_url || imgError) {
@@ -76,143 +94,193 @@ const JobDetailPage: React.FC<JobDetailPageProps> = ({ job, onNavigate }) => {
     );
   };
 
-  return (
-    <div className="max-w-6xl mx-auto px-4 py-12">
-      <nav className="mb-8 flex text-sm text-slate-500 gap-2 items-center">
-        <button onClick={() => onNavigate('home')} className="hover:text-indigo-600 transition-colors">Home</button>
-        <span className="text-slate-300">/</span>
-        <button onClick={() => onNavigate(`category:${job.category || 'all'}`)} className="hover:text-indigo-600 transition-colors uppercase">
-          {categoryLabel(job.category || 'Jobs')}
-        </button>
-        <span className="text-slate-300">/</span>
-        <span className="text-slate-900 font-medium truncate max-w-[200px] md:max-w-none">{job.title}</span>
-      </nav>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <div className="lg:col-span-8">
-          <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-12 mb-8 shadow-sm">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
-              <div className="flex items-center gap-6">
-                {renderLogo("w-24 h-24 rounded-2xl shadow-sm")}
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2 tracking-tight leading-tight">{job.title}</h1>
-                  <div className="flex flex-wrap items-center gap-3 text-slate-600">
-                    <span className="font-bold text-indigo-600 text-lg">{job.company.name}</span>
-                    <span className="hidden md:inline text-slate-300">•</span>
-                    <span className="flex items-center gap-1.5 font-medium">{ICONS.mapPin} {job.location_city}, {job.location_country}</span>
-                  </div>
-                </div>
-              </div>
-              <a href={job.apply_link} target="_blank" rel="nofollow noopener" className="w-full md:w-auto px-10 py-5 bg-indigo-600 text-white text-center font-bold text-lg rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 hover:-translate-y-0.5">
-                Apply Now
-              </a>
+  // Expired job notice
+  if (isExpired) {
+    return (
+      <>
+        <SEOHead 
+          title={`${job.title} at ${job.company.name} - Position No Longer Available`}
+          description={`This ${job.title} position at ${job.company.name} is no longer accepting applications.`}
+          canonical={`https://acrossjob.com/job/${job.id}`}
+          noindex={true}
+        />
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <div className="bg-amber-50 border border-amber-200 rounded-3xl p-12 text-center">
+            <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6 py-8 border-y border-slate-100 mb-12">
-              <div>
-                <span className="block text-xs text-slate-400 uppercase font-bold tracking-widest mb-1.5">Salary</span>
-                <span className="font-bold text-slate-900 text-lg">{formatSalary(job.salary_range)}</span>
-              </div>
-              <div>
-                <span className="block text-xs text-slate-400 uppercase font-bold tracking-widest mb-1.5">Work Type</span>
-                <span className="font-bold text-slate-900 text-lg capitalize">{job.job_type}</span>
-              </div>
-              <div className="hidden md:block">
-                <span className="block text-xs text-slate-400 uppercase font-bold tracking-widest mb-1.5">Location</span>
-                <span className="font-bold text-slate-900 text-lg">{job.location_city}</span>
-              </div>
-            </div>
-
-            <div className="space-y-12">
-              {job.description && (
-                <section>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
-                    <span className="w-1.5 h-8 bg-indigo-600 rounded-full"></span>
-                    Job Description
-                  </h2>
-                  <div 
-                    className="rich-content"
-                    dangerouslySetInnerHTML={{ __html: formatJobDescription(job.description) }} 
-                  />
-                </section>
-              )}
-              
-              {job.responsibilities && (
-                <section>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
-                    <span className="w-1.5 h-8 bg-indigo-600 rounded-full"></span>
-                    Key Responsibilities
-                  </h2>
-                  <div 
-                    className="rich-content"
-                    dangerouslySetInnerHTML={{ __html: formatJobDescription(job.responsibilities) }} 
-                  />
-                </section>
-              )}
-
-              {job.requirements && (
-                <section>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
-                    <span className="w-1.5 h-8 bg-indigo-600 rounded-full"></span>
-                    What We're Looking For
-                  </h2>
-                  <div 
-                    className="rich-content"
-                    dangerouslySetInnerHTML={{ __html: formatJobDescription(job.requirements) }} 
-                  />
-                </section>
-              )}
-              
-              {job.benefits && (
-                <section>
-                  <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
-                    <span className="w-1.5 h-8 bg-indigo-600 rounded-full"></span>
-                    Benefits & Perks
-                  </h2>
-                  <div 
-                    className="rich-content"
-                    dangerouslySetInnerHTML={{ __html: formatJobDescription(job.benefits) }} 
-                  />
-                </section>
-              )}
+            <h1 className="text-3xl font-bold text-slate-900 mb-4">Position No Longer Available</h1>
+            <p className="text-lg text-slate-600 mb-2">
+              The <strong>{job.title}</strong> position at <strong>{job.company.name}</strong> is no longer accepting applications.
+            </p>
+            <p className="text-slate-500 mb-8">This job posting has expired or been filled.</p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button 
+                onClick={() => onNavigate('home')}
+                className="px-8 py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all"
+              >
+                View All Jobs
+              </button>
+              <button 
+                onClick={() => onNavigate(`category:${job.category || 'all'}`)}
+                className="px-8 py-4 bg-white text-indigo-600 font-bold rounded-xl border-2 border-indigo-600 hover:bg-indigo-50 transition-all"
+              >
+                View Similar {categoryLabel(job.category || 'Jobs')}
+              </button>
             </div>
           </div>
         </div>
+      </>
+    );
+  }
 
-        <div className="lg:col-span-4">
-          <div className="sticky top-24 space-y-6">
-            <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-              <h3 className="text-xl font-bold text-slate-900 mb-4">Referral Search</h3>
-              <p className="text-slate-600 mb-8 leading-relaxed">
-                Referrals increase your chances of getting hired by 10x. Use our tool to find the right people to talk to.
-              </p>
-              <LinkedInReferralButton jobTitle={job.title} companyName={job.company.name} />
-            </div>
+  return (
+    <>
+      <SEOHead 
+        title={`${job.title} at ${job.company.name} | AcrossJob`}
+        description={`Apply for ${job.title} at ${job.company.name} in ${job.location_city}, ${job.location_country}. ${formatSalary(job.salary_range)} • ${job.job_type}`}
+        canonical={`https://acrossjob.com/job/${job.id}`}
+      />
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        <nav className="mb-8 flex text-sm text-slate-500 gap-2 items-center">
+          <button onClick={() => onNavigate('home')} className="hover:text-indigo-600 transition-colors">Home</button>
+          <span className="text-slate-300">/</span>
+          <button onClick={() => onNavigate(`category:${job.category || 'all'}`)} className="hover:text-indigo-600 transition-colors uppercase">
+            {categoryLabel(job.category || 'Jobs')}
+          </button>
+          <span className="text-slate-300">/</span>
+          <span className="text-slate-900 font-medium truncate max-w-[200px] md:max-w-none">{job.title}</span>
+        </nav>
 
-            <div className="bg-slate-900 rounded-3xl p-8 text-white">
-              <div className="flex items-center gap-5 mb-8">
-                {renderLogo("w-16 h-16 rounded-xl")}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          <div className="lg:col-span-8">
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 md:p-12 mb-8 shadow-sm">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
+                <div className="flex items-center gap-6">
+                  {renderLogo("w-24 h-24 rounded-2xl shadow-sm")}
+                  <div>
+                    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2 tracking-tight leading-tight">{job.title}</h1>
+                    <div className="flex flex-wrap items-center gap-3 text-slate-600">
+                      <span className="font-bold text-indigo-600 text-lg">{job.company.name}</span>
+                      <span className="hidden md:inline text-slate-300">•</span>
+                      <span className="flex items-center gap-1.5 font-medium">{ICONS.mapPin} {job.location_city}, {job.location_country}</span>
+                    </div>
+                  </div>
+                </div>
+                <a href={job.apply_link} target="_blank" rel="nofollow noopener" className="w-full md:w-auto px-10 py-5 bg-indigo-600 text-white text-center font-bold text-lg rounded-2xl hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 hover:-translate-y-0.5">
+                  Apply Now
+                </a>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6 py-8 border-y border-slate-100 mb-12">
                 <div>
-                  <h3 className="text-xl font-bold leading-tight">About {job.company.name}</h3>
-                  <a href={job.company.website_url || '#'} target="_blank" rel="noopener" className="text-indigo-400 text-sm hover:underline flex items-center gap-1 mt-1">
-                    Visit Website {ICONS.globe}
-                  </a>
+                  <span className="block text-xs text-slate-400 uppercase font-bold tracking-widest mb-1.5">Salary</span>
+                  <span className="font-bold text-slate-900 text-lg">{formatSalary(job.salary_range)}</span>
+                </div>
+                <div>
+                  <span className="block text-xs text-slate-400 uppercase font-bold tracking-widest mb-1.5">Work Type</span>
+                  <span className="font-bold text-slate-900 text-lg capitalize">{job.job_type}</span>
+                </div>
+                <div className="hidden md:block">
+                  <span className="block text-xs text-slate-400 uppercase font-bold tracking-widest mb-1.5">Location</span>
+                  <span className="font-bold text-slate-900 text-lg">{job.location_city}</span>
                 </div>
               </div>
-              <p className="text-slate-400 leading-relaxed mb-8 italic">
-                {truncatedAbout}
-              </p>
-              <div className="pt-6 border-t border-slate-800">
-                <a href={job.apply_link} target="_blank" rel="noopener" className="flex items-center justify-between w-full group text-indigo-400 font-bold">
-                  View Careers Page 
-                  <span className="group-hover:translate-x-1 transition-transform">{ICONS.chevronRight}</span>
-                </a>
+
+              <div className="space-y-12">
+                {job.description && (
+                  <section>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+                      <span className="w-1.5 h-8 bg-indigo-600 rounded-full"></span>
+                      Job Description
+                    </h2>
+                    <div 
+                      className="rich-content"
+                      dangerouslySetInnerHTML={{ __html: formatJobDescription(job.description) }} 
+                    />
+                  </section>
+                )}
+                
+                {job.responsibilities && (
+                  <section>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+                      <span className="w-1.5 h-8 bg-indigo-600 rounded-full"></span>
+                      Key Responsibilities
+                    </h2>
+                    <div 
+                      className="rich-content"
+                      dangerouslySetInnerHTML={{ __html: formatJobDescription(job.responsibilities) }} 
+                    />
+                  </section>
+                )}
+
+                {job.requirements && (
+                  <section>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+                      <span className="w-1.5 h-8 bg-indigo-600 rounded-full"></span>
+                      What We're Looking For
+                    </h2>
+                    <div 
+                      className="rich-content"
+                      dangerouslySetInnerHTML={{ __html: formatJobDescription(job.requirements) }} 
+                    />
+                  </section>
+                )}
+                
+                {job.benefits && (
+                  <section>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+                      <span className="w-1.5 h-8 bg-indigo-600 rounded-full"></span>
+                      Benefits & Perks
+                    </h2>
+                    <div 
+                      className="rich-content"
+                      dangerouslySetInnerHTML={{ __html: formatJobDescription(job.benefits) }} 
+                    />
+                  </section>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-4">
+            <div className="sticky top-24 space-y-6">
+              <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                <h3 className="text-xl font-bold text-slate-900 mb-4">Referral Search</h3>
+                <p className="text-slate-600 mb-8 leading-relaxed">
+                  Referrals increase your chances of getting hired by 10x. Use our tool to find the right people to talk to.
+                </p>
+                <LinkedInReferralButton jobTitle={job.title} companyName={job.company.name} />
+              </div>
+
+              <div className="bg-slate-900 rounded-3xl p-8 text-white">
+                <div className="flex items-center gap-5 mb-8">
+                  {renderLogo("w-16 h-16 rounded-xl")}
+                  <div>
+                    <h3 className="text-xl font-bold leading-tight">About {job.company.name}</h3>
+                    <a href={job.company.website_url || '#'} target="_blank" rel="noopener" className="text-indigo-400 text-sm hover:underline flex items-center gap-1 mt-1">
+                      Visit Website {ICONS.globe}
+                    </a>
+                  </div>
+                </div>
+                <p className="text-slate-400 leading-relaxed mb-8 italic">
+                  {truncatedAbout}
+                </p>
+                <div className="pt-6 border-t border-slate-800">
+                  <a href={job.apply_link} target="_blank" rel="noopener" className="flex items-center justify-between w-full group text-indigo-400 font-bold">
+                    View Careers Page 
+                    <span className="group-hover:translate-x-1 transition-transform">{ICONS.chevronRight}</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
