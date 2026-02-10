@@ -2,6 +2,7 @@ import React, { useState, useMemo, memo, useCallback } from 'react';
 import { ICONS, JOB_CATEGORIES, JOB_ROLES, EXPERIENCE_LEVELS, REMOTE_STATUSES } from '../constants';
 import { JobWithCompany } from '../types';
 import JobCard from '../components/jobs/JobCard';
+import { SEO } from '../components/SEO';
 
 interface HomeProps {
   onNavigate: (page: string) => void;
@@ -98,192 +99,134 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
   }, [search, city, jobType, experienceLevel]);
 
   return (
-    <div className="flex flex-col gap-20 pb-20">
-      {/* Hero Section */}
-      <section className="relative py-16 px-4 bg-slate-900 overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 -left-10 w-72 h-72 bg-indigo-500 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 -right-10 w-96 h-96 bg-purple-500 rounded-full blur-3xl"></div>
-        </div>
-        
-        <div className="max-w-5xl mx-auto relative z-10 text-center">
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-5 leading-tight">
-            Discover Your Next <span className="text-indigo-400">Career Opportunity</span>
-          </h1>
-          <p className="text-lg text-slate-300 mb-8 max-w-2xl mx-auto">
-            Browse thousands of job listings from top companies across multiple industries. Find the perfect role that matches your skills and aspirations.
-          </p>
-
-          <form 
-            onSubmit={handleSearch}
-            className="bg-white p-3 rounded-2xl shadow-2xl grid grid-cols-1 md:grid-cols-12 gap-2 max-w-6xl mx-auto"
-          >
-            {/* Keyword Search */}
-            <div className="md:col-span-3 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
-              <span className="text-slate-400 mr-2">{ICONS.search}</span>
-              <input 
-                type="text" 
-                placeholder="Job title or company" 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full outline-none text-slate-900 py-1 text-sm"
-              />
-            </div>
-
-            {/* City Dropdown */}
-            <div className="md:col-span-3 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
-              <span className="text-slate-400 mr-2">{ICONS.mapPin}</span>
-              <select
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="w-full outline-none text-slate-900 py-1 bg-white cursor-pointer text-sm"
-              >
-                <option value="">All Locations</option>
-                {availableCities.map((loc, idx) => (
-                  <option key={idx} value={loc}>{loc}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Job Type (Remote/Hybrid/On-site) */}
-            <div className="md:col-span-2 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
-              <span className="text-slate-400 mr-2">{ICONS.home}</span>
-              <select
-                value={jobType}
-                onChange={(e) => setJobType(e.target.value)}
-                className="w-full outline-none text-slate-900 py-1 bg-white cursor-pointer text-sm"
-              >
-                <option value="">All Types</option>
-                {REMOTE_STATUSES.map((status) => (
-                  <option key={status.value} value={status.value}>{status.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Experience Level */}
-            <div className="md:col-span-2 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
-              <span className="text-slate-400 mr-2">{ICONS.briefcase}</span>
-              <select
-                value={experienceLevel}
-                onChange={(e) => setExperienceLevel(e.target.value)}
-                className="w-full outline-none text-slate-900 py-1 bg-white cursor-pointer text-sm"
-              >
-                <option value="">All Levels</option>
-                {EXPERIENCE_LEVELS.map((level, idx) => (
-                  <option key={idx} value={level.label}>{level.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Search Button */}
-            <div className="md:col-span-2">
-              <button 
-                type="submit"
-                className="w-full bg-indigo-600 text-white font-bold px-4 py-3 rounded-xl hover:bg-indigo-500 transition-all cursor-pointer text-sm"
-              >
-                Search
-              </button>
-            </div>
-          </form>
-          
-          {/* Clear Search Button */}
-          {isSearchActive && (
-            <button
-              onClick={handleClearSearch}
-              className="mt-4 text-slate-300 hover:text-white text-sm font-medium transition-colors"
-            >
-              ✕ Clear search and show featured jobs
-            </button>
-          )}
-          
-          <div className="mt-6 flex flex-wrap justify-center gap-6 text-slate-400 text-sm">
-            <span>Popular: Frontend, Product Manager, DevOps, ML Engineer</span>
+    <>
+      <SEO 
+        title="AcrossJob - Smart Job Search with Network-First Approach"
+        description="Find your dream job with AcrossJob. Browse thousands of remote and on-site opportunities across technology, healthcare, finance, marketing, and more. Smart job search made simple."
+        canonicalUrl="https://acrossjob.com/"
+      />
+      
+      <div className="flex flex-col gap-20 pb-20">
+        {/* Hero Section */}
+        <section className="relative py-16 px-4 bg-slate-900 overflow-hidden">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 -left-10 w-72 h-72 bg-indigo-500 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 -right-10 w-96 h-96 bg-purple-500 rounded-full blur-3xl"></div>
           </div>
-        </div>
-      </section>
-
-      {/* Search Results or Categories */}
-      {isSearchActive ? (
-        /* Search Results Section */
-        <section className="max-w-7xl mx-auto px-4 w-full">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-slate-900 mb-2">
-              Search Results
-            </h2>
-            <p className="text-slate-600">
-              Found {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'}
-              {activeFiltersDescription && ` matching ${activeFiltersDescription}`}
+          
+          <div className="max-w-5xl mx-auto relative z-10 text-center">
+            <h1 className="text-3xl md:text-5xl font-bold text-white mb-5 leading-tight">
+              Discover Your Next <span className="text-indigo-400">Career Opportunity</span>
+            </h1>
+            <p className="text-lg text-slate-300 mb-8 max-w-2xl mx-auto">
+              Browse thousands of job listings from top companies across multiple industries. Find the perfect role that matches your skills and aspirations.
             </p>
-          </div>
-          
-          {filteredJobs.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4">
-              {filteredJobs.map(job => (
-                <JobCard 
-                  key={job.id} 
-                  job={job} 
-                  onSelect={(j) => onNavigate(`job:${j.id}`)} 
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white border border-dashed border-slate-300 rounded-3xl p-20 text-center">
-              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-6">
-                {ICONS.search}
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">No jobs found</h3>
-              <p className="text-slate-500 mb-6">
-                No jobs match all your selected filters.<br />
-                Try adjusting or removing some filters to see more results.
-              </p>
-              <button 
-                onClick={handleClearSearch}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 transition-all cursor-pointer"
-              >
-                Clear Search
-              </button>
-            </div>
-          )}
-        </section>
-      ) : (
-        /* Default View: Categories + Featured Jobs */
-        <>
-          {/* Categories Section */}
-          <section className="max-w-7xl mx-auto px-4 w-full">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-slate-900 mb-4">Browse by Industry</h2>
-              <p className="text-slate-600">Explore high-impact roles across our primary sectors.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {JOB_CATEGORIES.map((cat) => (
-                <CategoryCard
-                  key={cat.id}
-                  category={cat}
-                  onCategoryClick={handleCategoryClick}
-                  onSubcategoryClick={handleSubcategoryClick}
-                />
-              ))}
-            </div>
-          </section>
 
-          {/* Latest Jobs Section */}
-          <section className="bg-slate-50 py-20 px-4">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex justify-between items-end mb-12">
-                <div>
-                  <h2 className="text-3xl font-bold text-slate-900 mb-4">Latest Opportunities</h2>
-                  <p className="text-slate-600">Freshly posted roles from top-tier companies.</p>
-                </div>
-                <button 
-                  onClick={handleViewAllClick}
-                  className="hidden sm:flex items-center gap-1 text-indigo-600 font-semibold hover:text-indigo-700 cursor-pointer"
+            <form 
+              onSubmit={handleSearch}
+              className="bg-white p-3 rounded-2xl shadow-2xl grid grid-cols-1 md:grid-cols-12 gap-2 max-w-6xl mx-auto"
+            >
+              {/* Keyword Search */}
+              <div className="md:col-span-3 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
+                <span className="text-slate-400 mr-2">{ICONS.search}</span>
+                <input 
+                  type="text" 
+                  placeholder="Job title or company" 
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full outline-none text-slate-900 py-1 text-sm"
+                />
+              </div>
+
+              {/* City Dropdown */}
+              <div className="md:col-span-3 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
+                <span className="text-slate-400 mr-2">{ICONS.mapPin}</span>
+                <select
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-full outline-none text-slate-900 py-1 bg-white cursor-pointer text-sm"
                 >
-                  View All Jobs {ICONS.chevronRight}
+                  <option value="">All Locations</option>
+                  {availableCities.map((loc, idx) => (
+                    <option key={idx} value={loc}>{loc}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Job Type (Remote/Hybrid/On-site) */}
+              <div className="md:col-span-2 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
+                <span className="text-slate-400 mr-2">{ICONS.home}</span>
+                <select
+                  value={jobType}
+                  onChange={(e) => setJobType(e.target.value)}
+                  className="w-full outline-none text-slate-900 py-1 bg-white cursor-pointer text-sm"
+                >
+                  <option value="">All Types</option>
+                  {REMOTE_STATUSES.map((status) => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Experience Level */}
+              <div className="md:col-span-2 flex items-center px-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
+                <span className="text-slate-400 mr-2">{ICONS.briefcase}</span>
+                <select
+                  value={experienceLevel}
+                  onChange={(e) => setExperienceLevel(e.target.value)}
+                  className="w-full outline-none text-slate-900 py-1 bg-white cursor-pointer text-sm"
+                >
+                  <option value="">All Levels</option>
+                  {EXPERIENCE_LEVELS.map((level, idx) => (
+                    <option key={idx} value={level.label}>{level.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Search Button */}
+              <div className="md:col-span-2">
+                <button 
+                  type="submit"
+                  className="w-full bg-indigo-600 text-white font-bold px-4 py-3 rounded-xl hover:bg-indigo-500 transition-all cursor-pointer text-sm"
+                >
+                  Search
                 </button>
               </div>
-              
+            </form>
+            
+            {/* Clear Search Button */}
+            {isSearchActive && (
+              <button
+                onClick={handleClearSearch}
+                className="mt-4 text-slate-300 hover:text-white text-sm font-medium transition-colors"
+              >
+                ✕ Clear search and show featured jobs
+              </button>
+            )}
+            
+            <div className="mt-6 flex flex-wrap justify-center gap-6 text-slate-400 text-sm">
+              <span>Popular: Frontend, Product Manager, DevOps, ML Engineer</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Search Results or Categories */}
+        {isSearchActive ? (
+          /* Search Results Section */
+          <section className="max-w-7xl mx-auto px-4 w-full">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-slate-900 mb-2">
+                Search Results
+              </h2>
+              <p className="text-slate-600">
+                Found {filteredJobs.length} {filteredJobs.length === 1 ? 'job' : 'jobs'}
+                {activeFiltersDescription && ` matching ${activeFiltersDescription}`}
+              </p>
+            </div>
+            
+            {filteredJobs.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
-                {featuredJobs.map(job => (
+                {filteredJobs.map(job => (
                   <JobCard 
                     key={job.id} 
                     job={job} 
@@ -291,18 +234,84 @@ const Home: React.FC<HomeProps> = ({ onNavigate, featuredJobs, allJobs }) => {
                   />
                 ))}
               </div>
-
-              <button 
-                onClick={handleViewAllClick}
-                className="sm:hidden w-full mt-8 py-4 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 cursor-pointer"
-              >
-                View All Jobs
-              </button>
-            </div>
+            ) : (
+              <div className="bg-white border border-dashed border-slate-300 rounded-3xl p-20 text-center">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-6">
+                  {ICONS.search}
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">No jobs found</h3>
+                <p className="text-slate-500 mb-6">
+                  No jobs match all your selected filters.<br />
+                  Try adjusting or removing some filters to see more results.
+                </p>
+                <button 
+                  onClick={handleClearSearch}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 transition-all cursor-pointer"
+                >
+                  Clear Search
+                </button>
+              </div>
+            )}
           </section>
-        </>
-      )}
-    </div>
+        ) : (
+          /* Default View: Categories + Featured Jobs */
+          <>
+            {/* Categories Section */}
+            <section className="max-w-7xl mx-auto px-4 w-full">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold text-slate-900 mb-4">Browse by Industry</h2>
+                <p className="text-slate-600">Explore high-impact roles across our primary sectors.</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {JOB_CATEGORIES.map((cat) => (
+                  <CategoryCard
+                    key={cat.id}
+                    category={cat}
+                    onCategoryClick={handleCategoryClick}
+                    onSubcategoryClick={handleSubcategoryClick}
+                  />
+                ))}
+              </div>
+            </section>
+
+            {/* Latest Jobs Section */}
+            <section className="bg-slate-50 py-20 px-4">
+              <div className="max-w-7xl mx-auto">
+                <div className="flex justify-between items-end mb-12">
+                  <div>
+                    <h2 className="text-3xl font-bold text-slate-900 mb-4">Latest Opportunities</h2>
+                    <p className="text-slate-600">Freshly posted roles from top-tier companies.</p>
+                  </div>
+                  <button 
+                    onClick={handleViewAllClick}
+                    className="hidden sm:flex items-center gap-1 text-indigo-600 font-semibold hover:text-indigo-700 cursor-pointer"
+                  >
+                    View All Jobs {ICONS.chevronRight}
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-4">
+                  {featuredJobs.map(job => (
+                    <JobCard 
+                      key={job.id} 
+                      job={job} 
+                      onSelect={(j) => onNavigate(`job:${j.id}`)} 
+                    />
+                  ))}
+                </div>
+
+                <button 
+                  onClick={handleViewAllClick}
+                  className="sm:hidden w-full mt-8 py-4 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 cursor-pointer"
+                >
+                  View All Jobs
+                </button>
+              </div>
+            </section>
+          </>
+        )}
+      </div>
+    </>
   );
 };
 
