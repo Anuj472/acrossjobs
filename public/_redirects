@@ -1,4 +1,8 @@
-# Cloudflare Pages SPA routing
-# Redirect all requests to index.html for client-side routing
+# Cloudflare Pages redirect rules
+# Redirect HTTP to HTTPS and non-www to www
+http://acrossjob.com/* https://acrossjob.com/:splat 301!
+http://www.acrossjob.com/* https://acrossjob.com/:splat 301!
+https://www.acrossjob.com/* https://acrossjob.com/:splat 301!
 
+# Fallback for SPA
 /*    /index.html   200
