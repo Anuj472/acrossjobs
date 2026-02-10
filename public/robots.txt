@@ -4,12 +4,9 @@
 User-agent: *
 Allow: /
 
-# Sitemap location
-Sitemap: https://acrossjob.com/sitemap.xml
-
-# Crawl delay (optional - be nice to servers)
-Crawl-delay: 1
-
-# Disallow admin/internal pages (if any)
+# Disallow admin/internal pages
 Disallow: /api/
 Disallow: /admin/
+
+# Sitemap location
+Sitemap: https://acrossjob.com/sitemap.xml
