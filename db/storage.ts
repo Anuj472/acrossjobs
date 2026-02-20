@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { Job, Company, JobWithCompany } from '../types';
+import { generateSlug, isUUID } from '../lib/slugify';
 
 interface PaginatedResult<T> {
   data: T[];
@@ -251,6 +252,54 @@ export const storage = {
     }
   },
 
+  /**
+   * Get job by slug (SEO-friendly URL)
+   * Supports backward compatibility with UUID-based URLs
+   */
+  async getJobBySlug(slug: string): Promise<JobWithCompany | null> {
+    try {
+      // Check if it's a UUID (for backward compatibility)
+      if (isUUID(slug)) {
+        console.log('🔄 UUID detected, fetching by ID for backward compatibility');
+        return await this.getJobById(slug);
+      }
+
+      // Query by slug
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(`
+          *,
+          company:companies(*)
+        `)
+        .eq('slug', slug)
+        .eq('is_active', true)
+        .single();
+
+      if (error) {
+        console.error('Error fetching job by slug:', error);
+        return null;
+      }
+      
+      if (!data) return null;
+
+      return {
+        ...data,
+        company: data.company || {}
+      } as JobWithCompany;
+    } catch (error) {
+      console.error('Error fetching job by slug:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Get job by slug or ID (unified lookup)
+   * Automatically detects whether input is a slug or UUID
+   */
+  async getJobBySlugOrId(slugOrId: string): Promise<JobWithCompany | null> {
+    return await this.getJobBySlug(slugOrId);
+  },
+
   // Get jobs by category (with unlimited support)
   async getJobsByCategory(category: string, limit?: number): Promise<JobWithCompany[]> {
     return this.getJobsWithCompanies({
@@ -316,6 +365,11 @@ export const storage = {
   // Create new job
   async createJob(job: Partial<Job>): Promise<Job | null> {
     try {
+      // Generate slug if not provided
+      if (!job.slug && job.title) {
+        job.slug = generateSlug(job.title, job.id);
+      }
+
       const { data, error } = await supabase
         .from('jobs')
         .insert([job])
@@ -333,6 +387,11 @@ export const storage = {
   // Update job
   async updateJob(id: string, updates: Partial<Job>): Promise<Job | null> {
     try {
+      // Regenerate slug if title is being updated
+      if (updates.title && !updates.slug) {
+        updates.slug = generateSlug(updates.title, id);
+      }
+
       const { data, error } = await supabase
         .from('jobs')
         .update(updates)
@@ -378,6 +437,63 @@ export const storage = {
     } catch (error) {
       console.error('Error creating company:', error);
       return null;
+    }
+  },
+
+  /**
+   * Update all jobs to generate slugs (migration helper)
+   * WARNING: This should only be run once during migration
+   */
+  async generateSlugsForAllJobs(): Promise<{ updated: number; failed: number }> {
+    try {
+      console.log('🔄 Starting slug generation for all jobs...');
+      
+      // Get all jobs without slugs or with empty slugs
+      const { data: jobs, error } = await supabase
+        .from('jobs')
+        .select('id, title, slug')
+        .or('slug.is.null,slug.eq.');
+
+      if (error) throw error;
+
+      if (!jobs || jobs.length === 0) {
+        console.log('✅ No jobs need slug generation');
+        return { updated: 0, failed: 0 };
+      }
+
+      console.log(`📝 Generating slugs for ${jobs.length} jobs...`);
+
+      let updated = 0;
+      let failed = 0;
+
+      for (const job of jobs) {
+        try {
+          const slug = generateSlug(job.title, job.id);
+          const { error: updateError } = await supabase
+            .from('jobs')
+            .update({ slug })
+            .eq('id', job.id);
+
+          if (updateError) {
+            console.error(`❌ Failed to update job ${job.id}:`, updateError);
+            failed++;
+          } else {
+            updated++;
+            if (updated % 100 === 0) {
+              console.log(`📊 Progress: ${updated}/${jobs.length} jobs updated`);
+            }
+          }
+        } catch (err) {
+          console.error(`❌ Error processing job ${job.id}:`, err);
+          failed++;
+        }
+      }
+
+      console.log(`✅ Slug generation complete: ${updated} updated, ${failed} failed`);
+      return { updated, failed };
+    } catch (error) {
+      console.error('Error generating slugs:', error);
+      return { updated: 0, failed: 0 };
     }
   }
 };
