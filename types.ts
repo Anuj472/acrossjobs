@@ -17,6 +17,7 @@ export interface Job {
   id: string;
   company_id: string;
   title: string;
+  slug: string; // NEW: SEO-friendly URL slug
   category: JobCategoryType | null;
   location_city: string | null;
   location_country: string | null;
