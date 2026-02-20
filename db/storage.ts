@@ -251,6 +251,32 @@ export const storage = {
     }
   },
 
+  // Get single job by slug (NEW - for SEO-friendly URLs)
+  async getJobBySlug(slug: string): Promise<JobWithCompany | null> {
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select(`
+          *,
+          company:companies(*)
+        `)
+        .eq('slug', slug)
+        .eq('is_active', true)
+        .single();
+
+      if (error) throw error;
+      if (!data) return null;
+
+      return {
+        ...data,
+        company: data.company || {}
+      } as JobWithCompany;
+    } catch (error) {
+      console.error('Error fetching job by slug:', error);
+      return null;
+    }
+  },
+
   // Get jobs by category (with unlimited support)
   async getJobsByCategory(category: string, limit?: number): Promise<JobWithCompany[]> {
     return this.getJobsWithCompanies({
