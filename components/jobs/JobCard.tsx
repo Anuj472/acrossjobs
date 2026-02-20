@@ -25,7 +25,7 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
     if (!e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
       e.preventDefault();
       e.stopPropagation();
-      console.log('JobCard clicked:', job.id, job.title);
+      console.log('JobCard clicked:', job.slug || job.id, job.title);
       onSelect(job);
     }
   };
@@ -49,8 +49,8 @@ const JobCard: React.FC<JobCardProps> = ({ job, onSelect, variant = 'list' }) =>
     );
   };
 
-  // Generate the job detail URL path
-  const jobUrl = `/job/${job.id}`;
+  // Generate SEO-friendly job URL using slug, fallback to ID
+  const jobUrl = `/job/${job.slug || job.id}`;
 
   return (
     <a 
