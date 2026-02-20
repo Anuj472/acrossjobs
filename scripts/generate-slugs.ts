@@ -4,13 +4,45 @@
  */
 import { createClient } from '@supabase/supabase-js';
 import { generateSlug } from '../lib/slug';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL!;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY!;
+// Load environment variables from .env file
+function loadEnv() {
+  try {
+    const envPath = resolve(process.cwd(), '.env');
+    const envFile = readFileSync(envPath, 'utf-8');
+    const lines = envFile.split('\n');
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#')) {
+        const [key, ...valueParts] = trimmed.split('=');
+        const value = valueParts.join('=').trim();
+        if (key && value) {
+          process.env[key] = value;
+        }
+      }
+    }
+  } catch (error) {
+    console.log('⚠️  No .env file found, using environment variables');
+  }
+}
+
+loadEnv();
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing Supabase credentials!');
-  console.error('Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
+  console.error('Create a .env file with:');
+  console.error('  VITE_SUPABASE_URL=https://your-project.supabase.co');
+  console.error('  VITE_SUPABASE_ANON_KEY=your-anon-key');
+  console.error('');
+  console.error('Current values:');
+  console.error('  VITE_SUPABASE_URL:', supabaseUrl || 'NOT SET');
+  console.error('  VITE_SUPABASE_ANON_KEY:', supabaseKey ? '***' + supabaseKey.slice(-4) : 'NOT SET');
   process.exit(1);
 }
 
