@@ -1,6 +1,6 @@
 /**
  * Generate slugs for jobs that don't have them yet
- * Run: npm run generate-slugs
+ * Run: npm run generate:slugs
  */
 import { createClient } from '@supabase/supabase-js';
 import { generateSlug } from '../lib/slug';
@@ -85,8 +85,9 @@ async function generateMissingSlugs() {
         console.error(`❌ Failed to update job ${job.id}:`, updateError.message);
         errorCount++;
       } else {
+        const titlePreview = job.title.substring(0, 60) + (job.title.length > 60 ? '...' : '');
         console.log(`✅ [${successCount + 1}/${jobsWithoutSlugs.length}] ${finalSlug}`);
-        console.log(`   "${job.title.substring(0, 60)}${job.title.length > 60 ? '...' : ''}"`;
+        console.log(`   "${titlePreview}"`);
         successCount++;
       }
     }
