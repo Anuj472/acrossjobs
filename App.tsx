@@ -26,19 +26,19 @@ const parsePath = (path: string): string => {
   if (cleanPath === 'admin') return 'admin';
   if (cleanPath === 'jobs') return 'home';
   
-  // Handle /job/{id} pattern (singular)
+  // Handle /job/{slug} pattern (singular) - SEO-friendly URLs
   if (cleanPath.startsWith('job/')) {
     const parts = cleanPath.split('/');
     if (parts.length === 2 && parts[1]) {
-      return `job:${parts[1]}`;
+      return `job:${parts[1]}`; // parts[1] is now slug instead of UUID
     }
   }
   
-  // Handle /jobs/{category}/{id} pattern (plural)
+  // Handle /jobs/{category}/{slug} pattern (plural)
   if (cleanPath.startsWith('jobs/')) {
     const parts = cleanPath.split('/');
     if (parts.length === 3 && parts[2]) {
-      return `job:${parts[2]}`;
+      return `job:${parts[2]}`; // parts[2] is now slug
     }
     if (parts.length === 2 && parts[1]) {
       return `category:${parts[1]}`;
@@ -94,9 +94,9 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
         newPath = `/jobs/${cat}`;
       }
       else if (page.startsWith('job:')) {
-        const id = page.split(':')[1];
-        // Use the simpler /job/{id} pattern for job detail pages
-        newPath = `/job/${id}`;
+        const slug = page.split(':')[1];
+        // Use SEO-friendly slug in URL instead of UUID
+        newPath = `/job/${slug}`;
       } 
       else if (page === 'page:about') newPath = '/about-us';
       else if (page === 'page:contact') newPath = '/contact';
@@ -282,9 +282,16 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     }
     
     if (currentPage.startsWith('job:')) {
-      const jobId = currentPage.split(':')[1];
-      const job = jobsWithCompany.find(j => j.id === jobId);
+      const slugOrId = currentPage.split(':')[1];
+      
+      // Try to find by slug first, then fallback to ID for backward compatibility
+      let job = jobsWithCompany.find(j => j.slug === slugOrId);
+      if (!job) {
+        job = jobsWithCompany.find(j => j.id === slugOrId);
+      }
+      
       if (job) return <JobDetailPage job={job} onNavigate={navigate} />;
+      
       return (
         <div className="p-20 text-center">
           <p className="text-slate-500 mb-6 font-medium">Job listing not found or has expired.</p>
