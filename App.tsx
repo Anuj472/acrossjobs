@@ -26,15 +26,15 @@ const parsePath = (path: string): string => {
   if (cleanPath === 'admin') return 'admin';
   if (cleanPath === 'jobs') return 'home';
   
-  // Handle /job/{id} pattern (singular)
+  // Handle /job/{slug-or-id} pattern (singular)
   if (cleanPath.startsWith('job/')) {
     const parts = cleanPath.split('/');
     if (parts.length === 2 && parts[1]) {
-      return `job:${parts[1]}`;
+      return `job:${parts[1]}`; // Now supports both slugs and UUIDs
     }
   }
   
-  // Handle /jobs/{category}/{id} pattern (plural)
+  // Handle /jobs/{category}/{slug-or-id} pattern (plural) - for backward compatibility
   if (cleanPath.startsWith('jobs/')) {
     const parts = cleanPath.split('/');
     if (parts.length === 3 && parts[2]) {
@@ -94,9 +94,9 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
         newPath = `/jobs/${cat}`;
       }
       else if (page.startsWith('job:')) {
-        const id = page.split(':')[1];
-        // Use the simpler /job/{id} pattern for job detail pages
-        newPath = `/job/${id}`;
+        const slugOrId = page.split(':')[1];
+        // Use SEO-friendly /job/{slug} pattern
+        newPath = `/job/${slugOrId}`;
       } 
       else if (page === 'page:about') newPath = '/about-us';
       else if (page === 'page:contact') newPath = '/contact';
@@ -282,9 +282,66 @@ const App: React.FC<AppProps> = ({ ssrPath, initialJobs }) => {
     }
     
     if (currentPage.startsWith('job:')) {
-      const jobId = currentPage.split(':')[1];
-      const job = jobsWithCompany.find(j => j.id === jobId);
+      const slugOrId = currentPage.split(':')[1];
+      
+      // Try to find job by slug first (in-memory lookup for loaded jobs)
+      let job = jobsWithCompany.find(j => j.slug === slugOrId || j.id === slugOrId);
+      
+      // If not found in loaded jobs, we need to fetch it
+      if (!job && !loading) {
+        // Create a component that fetches the job
+        const JobLoader = () => {
+          const [jobData, setJobData] = useState<JobWithCompany | null>(null);
+          const [jobLoading, setJobLoading] = useState(true);
+          
+          useEffect(() => {
+            const loadJob = async () => {
+              try {
+                const fetchedJob = await storage.getJobBySlugOrId(slugOrId);
+                setJobData(fetchedJob);
+              } catch (err) {
+                console.error('Error loading job:', err);
+              } finally {
+                setJobLoading(false);
+              }
+            };
+            loadJob();
+          }, []);
+          
+          if (jobLoading) {
+            return (
+              <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
+                <p className="text-slate-600 font-medium">Loading job details...</p>
+              </div>
+            );
+          }
+          
+          if (jobData) {
+            return <JobDetailPage job={jobData} onNavigate={navigate} />;
+          }
+          
+          return (
+            <div className="p-20 text-center">
+              <p className="text-slate-500 mb-6 font-medium">Job listing not found or has expired.</p>
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate('home');
+                }} 
+                className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg cursor-pointer"
+              >
+                Return to Jobs
+              </button>
+            </div>
+          );
+        };
+        
+        return <JobLoader />;
+      }
+      
       if (job) return <JobDetailPage job={job} onNavigate={navigate} />;
+      
       return (
         <div className="p-20 text-center">
           <p className="text-slate-500 mb-6 font-medium">Job listing not found or has expired.</p>
