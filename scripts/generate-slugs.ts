@@ -52,10 +52,16 @@ async function generateMissingSlugs() {
   console.log('🔄 Starting slug generation...\n');
   
   try {
-    // Fetch jobs without slugs
+    // Fetch jobs without slugs along with company name
     const { data: jobsWithoutSlugs, error } = await supabase
       .from('jobs')
-      .select('id, title, slug')
+      .select(`
+        id, 
+        title, 
+        slug,
+        company_id,
+        companies!inner(name)
+      `)
       .or('slug.is.null,slug.eq.');
 
     if (error) {
@@ -74,7 +80,8 @@ async function generateMissingSlugs() {
     let errorCount = 0;
 
     for (const job of jobsWithoutSlugs) {
-      const slug = generateSlug(job.title);
+      const companyName = job.companies?.name;
+      const slug = generateSlug(job.title, companyName);
       
       // Check if slug exists
       const { data: existingJob } = await supabase
@@ -117,9 +124,10 @@ async function generateMissingSlugs() {
         console.error(`❌ Failed to update job ${job.id}:`, updateError.message);
         errorCount++;
       } else {
-        const titlePreview = job.title.substring(0, 60) + (job.title.length > 60 ? '...' : '');
+        const titlePreview = job.title.substring(0, 40) + (job.title.length > 40 ? '...' : '');
+        const companyPreview = companyName ? ` @ ${companyName}` : '';
         console.log(`✅ [${successCount + 1}/${jobsWithoutSlugs.length}] ${finalSlug}`);
-        console.log(`   "${titlePreview}"`);
+        console.log(`   "${titlePreview}${companyPreview}"`);
         successCount++;
       }
     }
