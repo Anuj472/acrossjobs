@@ -4,18 +4,27 @@ ALTER TABLE jobs ADD COLUMN IF NOT EXISTS slug TEXT UNIQUE;
 -- Create index for faster slug lookups
 CREATE INDEX IF NOT EXISTS idx_jobs_slug ON jobs(slug);
 
--- Create function to auto-generate unique slugs
+-- Create function to auto-generate unique slugs with company name
 CREATE OR REPLACE FUNCTION generate_unique_slug()
 RETURNS TRIGGER AS $$
 DECLARE
   base_slug TEXT;
   new_slug TEXT;
   counter INTEGER := 1;
+  company_name TEXT;
 BEGIN
   -- Only generate slug if title exists and slug is null
   IF NEW.title IS NOT NULL AND (NEW.slug IS NULL OR NEW.slug = '') THEN
-    -- Generate base slug from title
-    base_slug := regexp_replace(lower(NEW.title), '[^a-z0-9]+', '-', 'g');
+    -- Fetch company name
+    SELECT name INTO company_name FROM companies WHERE id = NEW.company_id;
+    
+    -- Generate base slug from title and company name
+    IF company_name IS NOT NULL THEN
+      base_slug := regexp_replace(lower(NEW.title || ' ' || company_name), '[^a-z0-9]+', '-', 'g');
+    ELSE
+      base_slug := regexp_replace(lower(NEW.title), '[^a-z0-9]+', '-', 'g');
+    END IF;
+    
     base_slug := trim(both '-' from regexp_replace(base_slug, '-+', '-', 'g'));
     base_slug := substring(base_slug, 1, 100);
     base_slug := trim(trailing '-' from base_slug);
@@ -49,4 +58,4 @@ CREATE TRIGGER trg_jobs_slug
   EXECUTE FUNCTION generate_unique_slug();
 
 -- Add comment
-COMMENT ON COLUMN jobs.slug IS 'SEO-friendly URL slug generated from job title';
+COMMENT ON COLUMN jobs.slug IS 'SEO-friendly URL slug generated from job title and company name';
