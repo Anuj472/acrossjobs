@@ -1,10 +1,12 @@
 /**
- * Generate SEO-friendly slug from job title
- * Converts: "Senior Staff Machine Learning Engineer – GenAI"
- * To: "senior-staff-machine-learning-engineer-genai"
+ * Generate SEO-friendly slug from job title and organization name
+ * Converts: "Senior Developer" + "Google" 
+ * To: "senior-developer-google"
  */
-export function generateSlug(title: string): string {
-  return title
+export function generateSlug(title: string, organizationName?: string): string {
+  const combined = organizationName ? `${title} ${organizationName}` : title;
+  
+  return combined
     .toLowerCase()
     .trim()
     // Remove special characters except spaces and hyphens
